@@ -12,3 +12,4 @@ export * from './platform/index.js';
 export * from './types.js';
 export * from './errors.js';
 export * from './logger.js';
+export * from './scanner.js';
