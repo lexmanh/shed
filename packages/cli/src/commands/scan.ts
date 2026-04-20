@@ -1,12 +1,15 @@
 import { resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import {
+  AndroidDetector,
   DockerDetector,
+  FlutterDetector,
   NodeDetector,
   PythonDetector,
   RiskTier,
   RustDetector,
   Scanner,
+  XcodeDetector,
 } from '@lxmanh/shed-core';
 import pc from 'picocolors';
 
@@ -51,6 +54,9 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
     new PythonDetector(),
     new RustDetector(),
     new DockerDetector(),
+    new XcodeDetector(),
+    new FlutterDetector(),
+    new AndroidDetector(),
   ]);
 
   const ctx = { scanRoot: rootDir, maxDepth: 8 };
