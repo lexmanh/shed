@@ -13,6 +13,7 @@
  * - DerivedData entries: Yellow — fully regeneratable with Cmd+B
  */
 
+import type { Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -73,9 +74,9 @@ export class XcodeDetector extends BaseDetector {
     if (!(await this.dirExists(derivedDataDir))) return [];
 
     const items: CleanableItem[] = [];
-    let entries: Awaited<ReturnType<typeof readdir>>;
+    let entries: Dirent[];
     try {
-      entries = await readdir(derivedDataDir, { withFileTypes: true });
+      entries = (await readdir(derivedDataDir, { withFileTypes: true })) as Dirent[];
     } catch {
       return [];
     }

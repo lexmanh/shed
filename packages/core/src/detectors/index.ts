@@ -1,5 +1,7 @@
+export * from './android-detector.js';
 export * from './detector.js';
 export * from './docker-detector.js';
+export * from './flutter-detector.js';
 export * from './node-detector.js';
 export * from './python-detector.js';
 export * from './rust-detector.js';
