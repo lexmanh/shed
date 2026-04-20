@@ -20,7 +20,8 @@
       "Bash(pnpm -F @lxmanh/shed-core add trash)",
       "Bash(pnpm build *)",
       "Bash(pnpm test *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git tag *)"
     ]
   }
 }
