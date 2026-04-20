@@ -1,7 +1,7 @@
 # Shed — Project Plan
 
 > Safe, cross-platform, AI-aware disk cleanup for developers.
-> Current status: **Closed Beta Development** (Phase 0).
+> Current status: **Public / Open Source** (v0.1.0-beta).
 
 ---
 

@@ -18,7 +18,7 @@ File này cung cấp guidance cho **Claude Code** khi làm việc trong reposito
 
 **Target platforms:** macOS (Intel + Apple Silicon), Windows 10+, Linux (major distros).
 
-**Current phase:** Closed beta. Repo private. Xem `BETA_PROGRAM.md` cho chi tiết.
+**Current phase:** Public open source (v0.1.0-beta). Xem `CONTRIBUTING.md` để contribute.
 
 ---
 
@@ -211,7 +211,6 @@ Khi implement AI-powered features:
 - `docs/architecture.md` — deep dive kiến trúc (TBD)
 - `docs/safety-testing.md` — cách viết safety tests (TBD)
 - `docs/detector-plugin-guide.md` — viết detector mới (TBD)
-- `BETA_PROGRAM.md` — closed beta process
-- `CONTRIBUTING.md` — cho contributors khi flip sang public
+- `CONTRIBUTING.md` — hướng dẫn cho contributors
 
 **Khi unclear về safety, default là NOT do it và ask user.** Disk space có thể shed lại lần sau; user data bị phá một khi mất là mất.
