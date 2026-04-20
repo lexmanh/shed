@@ -1,7 +1,7 @@
 {
   "name": "@lxmanh/shed-cli",
   "version": "0.1.0-beta.1",
-  "description": "Shed CLI — safe, cross-platform disk cleanup for developers",
+  "description": "Safe, cross-platform disk cleanup CLI for developers — reclaim space from dev caches without breaking active work",
   "type": "module",
   "bin": {
     "shed": "./dist/cli.js"

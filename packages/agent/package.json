@@ -1,7 +1,7 @@
 {
   "name": "@lxmanh/shed-agent",
   "version": "0.1.0-beta.1",
-  "description": "AI provider abstraction for Shed (Anthropic, OpenAI, Ollama)",
+  "description": "AI provider abstraction for Shed — supports Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, and Ollama",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
