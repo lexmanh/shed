@@ -282,3 +282,80 @@ describe('NodeDetector.scanGlobal', () => {
     }
   });
 });
+
+// ─── workspace root detection ─────────────────────────────────────────────────
+
+describe('NodeDetector.analyze — workspace root warning', () => {
+  it('adds workspace warning when pnpm-workspace.yaml exists', async () => {
+    const fix = await createFixture({
+      'package.json': JSON.stringify({ name: 'my-monorepo' }),
+      'pnpm-workspace.yaml': 'packages:\n  - packages/*',
+      'node_modules/.keep': '',
+    });
+    try {
+      const result = await new NodeDetector().analyze(fix.path, ctx);
+      const item = result?.items.find((i) => i.path.endsWith('node_modules'));
+      expect(item?.description).toMatch(/workspace/i);
+    } finally {
+      await fix.rm();
+    }
+  });
+
+  it('adds workspace warning when package.json has workspaces field', async () => {
+    const fix = await createFixture({
+      'package.json': JSON.stringify({ name: 'my-monorepo', workspaces: ['packages/*'] }),
+      'node_modules/.keep': '',
+    });
+    try {
+      const result = await new NodeDetector().analyze(fix.path, ctx);
+      const item = result?.items.find((i) => i.path.endsWith('node_modules'));
+      expect(item?.description).toMatch(/workspace/i);
+    } finally {
+      await fix.rm();
+    }
+  });
+
+  it('adds workspace warning when nx.json exists', async () => {
+    const fix = await createFixture({
+      'package.json': '{}',
+      'nx.json': '{}',
+      'node_modules/.keep': '',
+    });
+    try {
+      const result = await new NodeDetector().analyze(fix.path, ctx);
+      const item = result?.items.find((i) => i.path.endsWith('node_modules'));
+      expect(item?.description).toMatch(/workspace/i);
+    } finally {
+      await fix.rm();
+    }
+  });
+
+  it('adds workspace warning when turbo.json exists', async () => {
+    const fix = await createFixture({
+      'package.json': '{}',
+      'turbo.json': '{}',
+      'node_modules/.keep': '',
+    });
+    try {
+      const result = await new NodeDetector().analyze(fix.path, ctx);
+      const item = result?.items.find((i) => i.path.endsWith('node_modules'));
+      expect(item?.description).toMatch(/workspace/i);
+    } finally {
+      await fix.rm();
+    }
+  });
+
+  it('no workspace warning for regular project', async () => {
+    const fix = await createFixture({
+      'package.json': JSON.stringify({ name: 'simple-app' }),
+      'node_modules/.keep': '',
+    });
+    try {
+      const result = await new NodeDetector().analyze(fix.path, ctx);
+      const item = result?.items.find((i) => i.path.endsWith('node_modules'));
+      expect(item?.description).not.toMatch(/workspace/i);
+    } finally {
+      await fix.rm();
+    }
+  });
+});

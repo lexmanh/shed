@@ -65,9 +65,9 @@ export class NodeDetector extends BaseDetector {
 
   async analyze(dir: string, _ctx: DetectorContext): Promise<DetectedProject | null> {
     const pkgJsonPath = join(dir, 'package.json');
-    let pkgJson: { name?: string } = {};
+    let pkgJson: { name?: string; workspaces?: unknown } = {};
     try {
-      pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf-8')) as { name?: string };
+      pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf-8')) as { name?: string; workspaces?: unknown };
     } catch {
       return null;
     }
@@ -77,6 +77,10 @@ export class NodeDetector extends BaseDetector {
     // node_modules
     const nodeModulesPath = join(dir, 'node_modules');
     if (await this.dirExists(nodeModulesPath)) {
+      const isWorkspaceRoot = await this.detectWorkspaceRoot(dir, pkgJson);
+      const description = isWorkspaceRoot
+        ? 'Installed npm packages (workspace root) — all packages will need reinstall with `npm install`'
+        : 'Installed npm packages — regenerate with `npm install`';
       items.push({
         id: `${dir}::node_modules`,
         path: nodeModulesPath,
@@ -84,7 +88,7 @@ export class NodeDetector extends BaseDetector {
         risk: RiskTier.Yellow,
         sizeBytes: await this.computeSize(nodeModulesPath),
         lastModified: await this.getLastModified(nodeModulesPath),
-        description: 'Installed npm packages — regenerate with `npm install`',
+        description,
         projectRoot: dir,
       });
     }
@@ -122,6 +126,22 @@ export class NodeDetector extends BaseDetector {
       gitClean,
       items,
     };
+  }
+
+  private async detectWorkspaceRoot(
+    dir: string,
+    pkgJson: { workspaces?: unknown },
+  ): Promise<boolean> {
+    if (pkgJson.workspaces) return true;
+    for (const marker of ['pnpm-workspace.yaml', 'nx.json', 'turbo.json']) {
+      try {
+        await access(join(dir, marker));
+        return true;
+      } catch {
+        /* not found */
+      }
+    }
+    return false;
   }
 
   override async scanGlobal(_ctx: DetectorContext): Promise<readonly CleanableItem[]> {
