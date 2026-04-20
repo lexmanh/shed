@@ -19,7 +19,8 @@
       "Bash(node /Users/lxmanh/Projects/relax/shed/packages/cli/dist/cli.js scan /Users/lxmanh/Projects/relax/shed)",
       "Bash(pnpm -F @lxmanh/shed-core add trash)",
       "Bash(pnpm build *)",
-      "Bash(pnpm test *)"
+      "Bash(pnpm test *)",
+      "Bash(git commit *)"
     ]
   }
 }

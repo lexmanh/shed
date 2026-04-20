@@ -28,13 +28,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build core (needed for typecheck of dependent packages)
+        run: pnpm --filter @lxmanh/shed-core build
+
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Test
         run: pnpm test
 
-      - name: Build
+      - name: Build all
         run: pnpm build
 
       - name: Publish packages

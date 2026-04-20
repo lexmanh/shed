@@ -12,6 +12,8 @@ import {
   RustDetector,
   Scanner,
   XcodeDetector,
+  type CleanableItem,
+  type DetectedProject,
 } from '@lxmanh/shed-core';
 import pc from 'picocolors';
 import { verbose } from '../verbose.js';
@@ -71,8 +73,8 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
     scanner.scanGlobal(ctx),
   ]);
 
-  const allItems = [...projects.flatMap((proj) => proj.items), ...globalItems].sort(
-    (a, b) => RISK_ORDER[a.risk] - RISK_ORDER[b.risk],
+  const allItems = [...projects.flatMap((proj: DetectedProject) => proj.items), ...globalItems].sort(
+    (a: CleanableItem, b: CleanableItem) => RISK_ORDER[a.risk] - RISK_ORDER[b.risk],
   );
 
   const totalBytes = allItems.reduce((sum, i) => sum + i.sizeBytes, 0);

@@ -13,6 +13,9 @@ import {
   SafetyChecker,
   Scanner,
   XcodeDetector,
+  type CleanableItem,
+  type DetectedProject,
+  type SafetyReason,
 } from '@lxmanh/shed-core';
 import pc from 'picocolors';
 import { verbose } from '../verbose.js';
@@ -75,8 +78,8 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
     scanner.scanGlobal(ctx),
   ]);
 
-  const allItems = [...projects.flatMap((proj) => proj.items), ...globalItems].filter(
-    (i) => options.includeRed || i.risk !== RiskTier.Red,
+  const allItems = [...projects.flatMap((proj: DetectedProject) => proj.items), ...globalItems].filter(
+    (i: CleanableItem) => options.includeRed || i.risk !== RiskTier.Red,
   );
 
   verbose(`scan complete: ${allItems.length} cleanable items`);
@@ -106,7 +109,7 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
       blockedItems
         .map((item) => {
           const reasons = checkResults[allItems.indexOf(item)]?.reasons ?? [];
-          const blockReason = reasons.find((r) => r.severity === 'block');
+          const blockReason = reasons.find((r: SafetyReason) => r.severity === 'block');
           return `${pc.dim(item.path)}\n  ${pc.red('✗')} ${blockReason?.message ?? 'blocked'}`;
         })
         .join('\n\n'),
@@ -127,9 +130,9 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
       const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
       const displayPath = home ? item.path.replace(home, '~') : item.path;
       const warnings =
-        checkResults[allItems.indexOf(item)]?.reasons.filter((r) => r.severity === 'warning') ?? [];
+        checkResults[allItems.indexOf(item)]?.reasons.filter((r: SafetyReason) => r.severity === 'warning') ?? [];
       const warnStr =
-        warnings.length > 0 ? pc.yellow(` ⚠ ${warnings.map((w) => w.message).join('; ')}`) : '';
+        warnings.length > 0 ? pc.yellow(` ⚠ ${warnings.map((w: SafetyReason) => w.message).join('; ')}`) : '';
       return {
         value: item,
         label: `${RISK_BADGE[item.risk]}  ${displayPath}  ${pc.dim(formatBytes(item.sizeBytes))}${warnStr}`,
