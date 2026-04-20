@@ -1,0 +1,51 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish packages
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "$TAG" == *"-beta"* ]] || [[ "$TAG" == *"-alpha"* ]] || [[ "$TAG" == *"-rc"* ]]; then
+            DIST_TAG="beta"
+          else
+            DIST_TAG="latest"
+          fi
+          echo "Publishing with dist-tag: $DIST_TAG"
+          pnpm -r publish --no-git-checks --tag "$DIST_TAG"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
