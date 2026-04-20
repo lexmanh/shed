@@ -37,18 +37,32 @@ describe('IdeDetector.analyze', () => {
 });
 
 describe('IdeDetector.scanGlobal — JetBrains', () => {
-  it('returns Green items for JetBrains system cache dirs', async () => {
-    // Simulate ~/Library/Caches/JetBrains/IntelliJIdea2023.3
+  it('returns Green items for JetBrains system cache dirs (macOS)', async () => {
     const home = await createFixture({
       'Library/Caches/JetBrains/IntelliJIdea2023.3/caches/some.cache': 'data',
     });
     try {
-      const detector = new IdeDetector({ homeDir: home.path });
+      const detector = new IdeDetector({ homeDir: home.path, platform: 'darwin' });
       const items = await detector.scanGlobal(ctx);
       const jbItem = items.find((i) => i.path.includes('IntelliJIdea2023.3'));
       expect(jbItem).toBeDefined();
       expect(jbItem?.risk).toBe(RiskTier.Green);
       expect(jbItem?.detector).toBe('ide');
+    } finally {
+      await home.rm();
+    }
+  });
+
+  it('returns Green items for JetBrains system cache dirs (linux)', async () => {
+    const home = await createFixture({
+      '.cache/JetBrains/IntelliJIdea2023.3/caches/some.cache': 'data',
+    });
+    try {
+      const detector = new IdeDetector({ homeDir: home.path, platform: 'linux' });
+      const items = await detector.scanGlobal(ctx);
+      const jbItem = items.find((i) => i.path.includes('IntelliJIdea2023.3'));
+      expect(jbItem).toBeDefined();
+      expect(jbItem?.risk).toBe(RiskTier.Green);
     } finally {
       await home.rm();
     }
@@ -60,7 +74,7 @@ describe('IdeDetector.scanGlobal — JetBrains', () => {
       'Library/Caches/JetBrains/PyCharm2023.2/caches/b': 'y',
     });
     try {
-      const detector = new IdeDetector({ homeDir: home.path });
+      const detector = new IdeDetector({ homeDir: home.path, platform: 'darwin' });
       const items = await detector.scanGlobal(ctx);
       const jbItems = items.filter((i) => i.path.includes('JetBrains'));
       expect(jbItems.length).toBe(2);
@@ -72,7 +86,7 @@ describe('IdeDetector.scanGlobal — JetBrains', () => {
   it('returns empty array when no JetBrains caches exist', async () => {
     const home = await createFixture({});
     try {
-      const detector = new IdeDetector({ homeDir: home.path });
+      const detector = new IdeDetector({ homeDir: home.path, platform: 'darwin' });
       const items = await detector.scanGlobal(ctx);
       expect(items).toHaveLength(0);
     } finally {
@@ -87,7 +101,7 @@ describe('IdeDetector.scanGlobal — VSCode', () => {
       'Library/Application Support/Code/User/workspaceStorage/abc123def/workspace.json': '{}',
     });
     try {
-      const detector = new IdeDetector({ homeDir: home.path });
+      const detector = new IdeDetector({ homeDir: home.path, platform: 'darwin' });
       const items = await detector.scanGlobal(ctx);
       const vsItem = items.find((i) => i.path.includes('workspaceStorage'));
       expect(vsItem).toBeDefined();
