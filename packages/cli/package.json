@@ -6,7 +6,9 @@
   "bin": {
     "shed": "./dist/cli.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/cli.ts --format esm --clean",
     "dev": "tsup src/cli.ts --format esm --watch",
@@ -16,6 +18,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",
+    "@lxmanh/shed-agent": "workspace:^",
     "@lxmanh/shed-core": "workspace:*",
     "commander": "^12.1.0",
     "conf": "^13.1.0",

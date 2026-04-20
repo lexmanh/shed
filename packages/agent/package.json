@@ -5,7 +5,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --dts --watch",
@@ -15,7 +17,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.0",
+    "@google/genai": "^1.50.1",
     "@lxmanh/shed-core": "workspace:*",
+    "execa": "^9.5.0",
     "keytar": "^7.9.0",
     "openai": "^4.77.0"
   },
