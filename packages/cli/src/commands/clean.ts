@@ -1,4 +1,14 @@
+import { resolve } from 'node:path';
 import * as p from '@clack/prompts';
+import {
+  DockerDetector,
+  NodeDetector,
+  PythonDetector,
+  RiskTier,
+  RustDetector,
+  SafetyChecker,
+  Scanner,
+} from '@lxmanh/shed-core';
 import pc from 'picocolors';
 
 export interface CleanOptions {
@@ -9,29 +19,186 @@ export interface CleanOptions {
   yes?: boolean;
 }
 
-export async function cleanCommand(path = '.', options: CleanOptions = {}): Promise<void> {
-  p.intro(pc.bgYellow(pc.black(' shed clean ')));
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
 
-  // Default to dry-run unless --execute is explicitly passed (CLAUDE.md rule 2)
+const RISK_BADGE: Record<RiskTier, string> = {
+  [RiskTier.Green]: pc.green('Green '),
+  [RiskTier.Yellow]: pc.yellow('Yellow'),
+  [RiskTier.Red]: pc.red('Red   '),
+};
+
+export async function cleanCommand(path = '.', options: CleanOptions = {}): Promise<void> {
+  const rootDir = resolve(path);
+  // CLAUDE.md rule 2: dry-run is default unless --execute is explicitly passed
   const isDryRun = !options.execute;
 
+  p.intro(pc.bgYellow(pc.black(' shed clean ')));
+
   if (isDryRun) {
-    p.note('Running in DRY-RUN mode. Pass --execute to perform actual cleanup.', 'Safe mode');
-  } else {
-    const confirmed = options.yes
-      ? true
-      : await p.confirm({
-          message: 'You are about to perform a real cleanup. Continue?',
-          initialValue: false,
-        });
-    if (!confirmed) {
+    p.note(
+      'DRY-RUN mode — no files will be deleted.\nPass --execute to perform actual cleanup.',
+      'Safe mode',
+    );
+  }
+
+  // ── 1. Scan ────────────────────────────────────────────────────────────────
+  const spinner = p.spinner();
+  spinner.start(`Scanning ${rootDir} …`);
+
+  const scanner = new Scanner([
+    new NodeDetector(),
+    new PythonDetector(),
+    new RustDetector(),
+    new DockerDetector(),
+  ]);
+
+  const ctx = { scanRoot: rootDir, maxDepth: 8 };
+  const [projects, globalItems] = await Promise.all([
+    scanner.scan(rootDir),
+    scanner.scanGlobal(ctx),
+  ]);
+
+  const allItems = [...projects.flatMap((proj) => proj.items), ...globalItems].filter(
+    (i) => options.includeRed || i.risk !== RiskTier.Red,
+  );
+
+  spinner.stop(`Found ${pc.bold(String(allItems.length))} cleanable items.`);
+
+  if (allItems.length === 0) {
+    p.outro(pc.dim('Nothing to clean.'));
+    return;
+  }
+
+  // ── 2. Safety pre-flight ──────────────────────────────────────────────────
+  const checker = new SafetyChecker();
+  const checkResults = await Promise.all(allItems.map((item) => checker.check(item)));
+
+  const eligibleItems = allItems.filter((_, i) => {
+    const result = checkResults[i];
+    return result?.allowed ?? false;
+  });
+
+  const blockedItems = allItems.filter((_, i) => {
+    const result = checkResults[i];
+    return !(result?.allowed ?? false);
+  });
+
+  if (blockedItems.length > 0) {
+    p.note(
+      blockedItems
+        .map((item) => {
+          const reasons = checkResults[allItems.indexOf(item)]?.reasons ?? [];
+          const blockReason = reasons.find((r) => r.severity === 'block');
+          return `${pc.dim(item.path)}\n  ${pc.red('✗')} ${blockReason?.message ?? 'blocked'}`;
+        })
+        .join('\n\n'),
+      `${blockedItems.length} item(s) blocked by safety checks`,
+    );
+  }
+
+  if (eligibleItems.length === 0) {
+    p.outro(pc.yellow('All items were blocked by safety checks.'));
+    return;
+  }
+
+  // ── 3. Interactive selection (unless --yes) ───────────────────────────────
+  let selectedItems = eligibleItems;
+
+  if (!options.yes) {
+    const choices = eligibleItems.map((item) => {
+      const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
+      const displayPath = home ? item.path.replace(home, '~') : item.path;
+      const warnings =
+        checkResults[allItems.indexOf(item)]?.reasons.filter((r) => r.severity === 'warning') ?? [];
+      const warnStr =
+        warnings.length > 0 ? pc.yellow(` ⚠ ${warnings.map((w) => w.message).join('; ')}`) : '';
+      return {
+        value: item,
+        label: `${RISK_BADGE[item.risk]}  ${displayPath}  ${pc.dim(formatBytes(item.sizeBytes))}${warnStr}`,
+      };
+    });
+
+    const selection = await p.multiselect({
+      message: 'Select items to clean (space to toggle, enter to confirm):',
+      options: choices,
+      required: false,
+    });
+
+    if (p.isCancel(selection)) {
+      p.cancel('Cleanup cancelled.');
+      return;
+    }
+
+    selectedItems = selection as typeof eligibleItems;
+  }
+
+  if (selectedItems.length === 0) {
+    p.outro(pc.dim('Nothing selected.'));
+    return;
+  }
+
+  // ── 4. Final confirmation for non-dry-run ─────────────────────────────────
+  const totalBytes = selectedItems.reduce((s, i) => s + i.sizeBytes, 0);
+
+  if (!isDryRun && !options.yes) {
+    const action = options.hardDelete ? pc.red('PERMANENTLY DELETE') : 'move to Trash';
+    const confirmed = await p.confirm({
+      message: `${action} ${selectedItems.length} item(s) (${formatBytes(totalBytes)})?`,
+      initialValue: false,
+    });
+    if (p.isCancel(confirmed) || !confirmed) {
       p.cancel('Cleanup cancelled.');
       return;
     }
   }
 
-  // TODO: invoke scan + SafetyChecker.execute() from core
-  p.note('Clean command not yet implemented.\nSee CLAUDE.md Phase 1-2 for the plan.', 'Status');
+  // ── 5. Execute ────────────────────────────────────────────────────────────
+  const execSpinner = p.spinner();
+  execSpinner.start(isDryRun ? 'Simulating cleanup …' : 'Cleaning up …');
 
-  p.outro(pc.dim(`Dry-run: ${isDryRun}, target: ${path}`));
+  const result = await checker.execute(selectedItems, {
+    dryRun: isDryRun,
+    hardDelete: options.hardDelete ?? false,
+    includeRed: options.includeRed ?? false,
+  });
+
+  execSpinner.stop(isDryRun ? 'Dry-run complete.' : 'Cleanup complete.');
+
+  // ── 6. Results summary ────────────────────────────────────────────────────
+  if (result.succeeded.length > 0) {
+    const verb = isDryRun ? 'Would free' : 'Freed';
+    console.log(
+      `\n  ${pc.green('✓')} ${verb} ${pc.bold(pc.green(formatBytes(result.totalBytesFreed)))} across ${result.succeeded.length} item(s).`,
+    );
+  }
+
+  if (result.skipped.length > 0) {
+    console.log(`  ${pc.yellow('⚠')} ${result.skipped.length} item(s) skipped.`);
+    for (const s of result.skipped) {
+      const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
+      const displayPath = home ? s.item.path.replace(home, '~') : s.item.path;
+      console.log(`    ${pc.dim(displayPath)}: ${s.reason}`);
+    }
+  }
+
+  if (result.failed.length > 0) {
+    console.log(`  ${pc.red('✗')} ${result.failed.length} item(s) failed:`);
+    for (const f of result.failed) {
+      console.log(`    ${pc.dim(f.item.path)}: ${f.error}`);
+    }
+  }
+
+  console.log();
+  const outro = isDryRun
+    ? `Dry-run complete. Run with ${pc.cyan('--execute')} to perform actual cleanup.`
+    : result.failed.length > 0
+      ? `Completed with ${result.failed.length} failure(s).`
+      : 'All done!';
+
+  p.outro(outro);
 }

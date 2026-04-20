@@ -9,7 +9,7 @@
  * (CLAUDE.md rule 3).
  */
 
-import { DryRunViolation, SafetyViolationError } from '../errors.js';
+import { SafetyViolationError } from '../errors.js';
 import { type PlatformApi, getPlatform } from '../platform/index.js';
 import type {
   CleanableItem,
@@ -260,17 +260,17 @@ export class SafetyChecker {
    * The ONE place where Shed performs actual deletion.
    * CLAUDE.md rule 1: no other code may call fs.rm or rimraf directly.
    *
-   * TODO: implement with `trash` package (soft) and `fs.rm` (hard).
-   * Implementation deferred — write tests first.
+   * Soft delete (default): moves to OS Trash via `trash` package.
+   * Hard delete (--hard-delete flag): permanent removal via fs.rm.
    */
   private async performDelete(path: string, hardDelete: boolean): Promise<void> {
     if (hardDelete) {
-      // await fs.rm(path, { recursive: true, force: true });
-      throw new DryRunViolation(`Hard delete not yet implemented: ${path}`);
+      const { rm } = await import('node:fs/promises');
+      await rm(path, { recursive: true, force: false });
+      return;
     }
-    // const { default: trash } = await import('trash');
-    // await trash(path);
-    throw new DryRunViolation(`Trash deletion not yet implemented: ${path}`);
+    const { default: trash } = await import('trash');
+    await trash(path);
   }
 }
 

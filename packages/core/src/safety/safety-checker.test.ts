@@ -357,18 +357,20 @@ describe('SafetyChecker', () => {
     });
 
     it('continues after individual failures', async () => {
-      // In non-dryRun mode `performDelete` throws (not yet implemented).
-      // Each item should fail independently — execute() must not abort the
-      // whole batch on the first failure.
-      const checker = new SafetyChecker();
-      const items = [
-        mkItem({ id: 'a', path: '/tmp/a' }),
-        mkItem({ id: 'b', path: '/tmp/b' }),
-        mkItem({ id: 'c', path: '/tmp/c' }),
-      ];
+      // Use hardDelete=true with paths that don't exist so fs.rm throws ENOENT.
+      // Each item should fail independently — execute() must not abort the whole batch.
+      const checker = new SafetyChecker({ recencyThresholdDays: 0 });
+      const nonExistent = (id: string) =>
+        mkItem({
+          id,
+          path: `/tmp/__shed_no_exist_${id}__`,
+          sizeBytes: 100,
+          lastModified: Date.now() - 1000 * 60 * 60 * 24 * 60,
+        });
+      const items = [nonExistent('a'), nonExistent('b'), nonExistent('c')];
       const result = await checker.execute(items, {
         dryRun: false,
-        hardDelete: false,
+        hardDelete: true,
         includeRed: false,
       });
       expect(result.failed.length).toBe(3);
@@ -389,6 +391,76 @@ describe('SafetyChecker', () => {
         includeRed: false,
       });
       expect(perfSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── performDelete — real filesystem ────────────────────────────────────────
+
+  describe('performDelete — real filesystem', () => {
+    it('soft delete: moves directory to Trash (file no longer at original path)', async () => {
+      const fix = await createFixture({
+        'target/debug/binary': 'elf',
+        'target/release/binary': 'elf',
+      });
+      const targetPath = join(fix.path, 'target');
+      const checker = new SafetyChecker({ recencyThresholdDays: 0 });
+      const item = mkItem({
+        path: targetPath,
+        projectRoot: fix.path,
+        sizeBytes: 100,
+        lastModified: Date.now() - 1000 * 60 * 60 * 24 * 60,
+      });
+      const result = await checker.execute([item], {
+        dryRun: false,
+        hardDelete: false,
+        includeRed: false,
+      });
+      expect(result.succeeded).toHaveLength(1);
+      expect(result.failed).toHaveLength(0);
+      // Verify directory no longer exists at original path
+      const { access } = await import('node:fs/promises');
+      await expect(access(targetPath)).rejects.toThrow();
+      await fix.rm();
+    });
+
+    it('hard delete: removes directory permanently (fs.rm)', async () => {
+      const fix = await createFixture({
+        'dist/index.js': 'bundle',
+        'dist/index.css': 'styles',
+      });
+      const distPath = join(fix.path, 'dist');
+      const checker = new SafetyChecker({ recencyThresholdDays: 0 });
+      const item = mkItem({
+        path: distPath,
+        projectRoot: fix.path,
+        sizeBytes: 100,
+        lastModified: Date.now() - 1000 * 60 * 60 * 24 * 60,
+      });
+      const result = await checker.execute([item], {
+        dryRun: false,
+        hardDelete: true,
+        includeRed: false,
+      });
+      expect(result.succeeded).toHaveLength(1);
+      expect(result.failed).toHaveLength(0);
+      const { access } = await import('node:fs/promises');
+      await expect(access(distPath)).rejects.toThrow();
+      await fix.rm();
+    });
+
+    it('records failure when path does not exist', async () => {
+      const checker = new SafetyChecker({ recencyThresholdDays: 0 });
+      const item = mkItem({
+        path: '/tmp/__shed_nonexistent_12345__',
+        sizeBytes: 100,
+        lastModified: Date.now() - 1000 * 60 * 60 * 24 * 60,
+      });
+      const result = await checker.execute([item], {
+        dryRun: false,
+        hardDelete: true,
+        includeRed: false,
+      });
+      expect(result.failed).toHaveLength(1);
     });
   });
 });
