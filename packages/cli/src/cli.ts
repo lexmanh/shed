@@ -12,7 +12,6 @@ import { cleanCommand } from './commands/clean.js';
 import { configCommand } from './commands/config.js';
 import { doctorCommand } from './commands/doctor.js';
 import { scanCommand } from './commands/scan.js';
-import { setKeyCommand } from './commands/set-key.js';
 import { undoCommand } from './commands/undo.js';
 
 const program = new Command();
@@ -26,7 +25,6 @@ program
   .command('scan [path]')
   .description('Scan for cleanable items without modifying anything')
   .option('--json', 'Output machine-readable JSON')
-  .option('--explain-with-ai', 'Use AI to explain recommendations')
   .option('--max-age <days>', 'Only include items older than N days', '30')
   .action(scanCommand);
 
@@ -46,11 +44,6 @@ program
   .action(undoCommand);
 
 program.command('doctor').description('Check environment and configuration').action(doctorCommand);
-
-program
-  .command('set-key <provider>')
-  .description('Store an AI provider API key in the OS keychain (anthropic, openai, gemini, groq, mistral, openrouter)')
-  .action(setKeyCommand);
 
 program
   .command('config')

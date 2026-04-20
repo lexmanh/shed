@@ -13,16 +13,10 @@ import {
   Scanner,
   XcodeDetector,
 } from '@lxmanh/shed-core';
-import {
-  ExplainSession,
-  createProvider,
-  type ProviderName,
-} from '@lxmanh/shed-agent';
 import pc from 'picocolors';
 
 export interface ScanOptions {
   json?: boolean;
-  explainWithAi?: boolean;
   maxAge?: string;
 }
 
@@ -143,84 +137,5 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
   console.log();
   p.outro(
     `Total recoverable: ${pc.bold(pc.green(formatBytes(totalBytes)))} — run ${pc.cyan('shed clean')} to proceed.`,
-  );
-
-  if (options.explainWithAi) {
-    await runAiExplain(rootDir, allItems);
-  }
-}
-
-async function runAiExplain(
-  rootDir: string,
-  allItems: ReturnType<typeof Array.prototype.filter>,
-): Promise<void> {
-  console.log();
-  p.intro(pc.bgMagenta(pc.black(' shed AI ')));
-
-  // Determine provider from env or default to anthropic
-  const providerName = (process.env.SHED_AI_PROVIDER ?? 'anthropic') as ProviderName;
-  const model = process.env.SHED_AI_MODEL;
-
-  let provider;
-  try {
-    provider = await createProvider({ provider: providerName, ...(model ? { model } : {}) });
-  } catch (err) {
-    p.cancel(String(err instanceof Error ? err.message : err));
-    return;
-  }
-
-  const session = new ExplainSession({
-    provider,
-    scanRoot: rootDir,
-    scannedItems: allItems,
-    onPrivacyPrompt: async (preview) => {
-      p.note(
-        [
-          `Provider: ${pc.cyan(preview.providerName)}`,
-          '',
-          `${pc.green('Will send:')}`,
-          ...preview.dataIncluded.map((d) => `  + ${d}`),
-          '',
-          `${pc.dim('Will NOT send:')}`,
-          ...preview.dataExcluded.map((d) => `  - ${d}`),
-          '',
-          `Estimated tokens: ~${preview.estimatedTokens}`,
-        ].join('\n'),
-        'Privacy preview',
-      );
-      const confirmed = await p.confirm({
-        message: 'Send this data to the AI provider?',
-        initialValue: false,
-      });
-      if (p.isCancel(confirmed)) return false;
-      return confirmed as boolean;
-    },
-    onTokenWarning: (used) => {
-      p.note(`Token usage: ${used.toLocaleString()} / 100,000`, 'Warning');
-    },
-  });
-
-  const aiSpinner = p.spinner();
-  aiSpinner.start('Analyzing with AI …');
-
-  const result = await session.run(
-    `I just ran \`shed scan ${rootDir}\` and found ${allItems.length} cleanable items. ` +
-      `Please analyze the results and give me specific, prioritized recommendations — ` +
-      `which items are safest to delete first, estimated savings, and anything I should be careful about.`,
-  );
-
-  aiSpinner.stop('Analysis complete.');
-
-  if (result.aborted && !result.text) {
-    p.cancel('AI analysis was cancelled.');
-    return;
-  }
-
-  console.log();
-  console.log(result.text);
-  console.log();
-  p.note(
-    `Input: ${result.totalInputTokens.toLocaleString()} tokens  Output: ${result.totalOutputTokens.toLocaleString()} tokens`,
-    'Token usage',
   );
 }

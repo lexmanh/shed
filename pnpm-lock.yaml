@@ -66,9 +66,6 @@ importers:
       '@clack/prompts':
         specifier: ^0.8.2
         version: 0.8.2
-      '@lxmanh/shed-agent':
-        specifier: workspace:^
-        version: link:../agent
       '@lxmanh/shed-core':
         specifier: workspace:*
         version: link:../core
