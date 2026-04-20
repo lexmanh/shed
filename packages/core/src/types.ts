@@ -53,6 +53,7 @@ export type ProjectType =
   | 'flutter'
   | 'xcode'
   | 'android'
+  | 'cocoapods'
   | 'java-maven'
   | 'java-gradle'
   | 'dotnet'

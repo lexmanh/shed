@@ -2,8 +2,10 @@ import { resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import {
   AndroidDetector,
+  CocoaPodsDetector,
   DockerDetector,
   FlutterDetector,
+  IdeDetector,
   NodeDetector,
   PythonDetector,
   RiskTier,
@@ -57,6 +59,8 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
     new XcodeDetector(),
     new FlutterDetector(),
     new AndroidDetector(),
+    new CocoaPodsDetector(),
+    new IdeDetector(),
   ]);
 
   const ctx = { scanRoot: rootDir, maxDepth: 8 };
