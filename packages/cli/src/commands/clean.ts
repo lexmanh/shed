@@ -15,6 +15,7 @@ import {
   XcodeDetector,
 } from '@lxmanh/shed-core';
 import pc from 'picocolors';
+import { verbose } from '../verbose.js';
 
 export interface CleanOptions {
   dryRun?: boolean;
@@ -53,6 +54,7 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
 
   // ── 1. Scan ────────────────────────────────────────────────────────────────
   const spinner = p.spinner();
+  verbose(`clean root: ${rootDir}, dryRun=${isDryRun}, hardDelete=${options.hardDelete ?? false}`);
   spinner.start(`Scanning ${rootDir} …`);
 
   const scanner = new Scanner([
@@ -77,6 +79,7 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
     (i) => options.includeRed || i.risk !== RiskTier.Red,
   );
 
+  verbose(`scan complete: ${allItems.length} cleanable items`);
   spinner.stop(`Found ${pc.bold(String(allItems.length))} cleanable items.`);
 
   if (allItems.length === 0) {
@@ -168,6 +171,8 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
   }
 
   // ── 5. Execute ────────────────────────────────────────────────────────────
+  verbose(`executing ${selectedItems.length} items, dryRun=${isDryRun}, hardDelete=${options.hardDelete ?? false}`);
+  for (const item of selectedItems) verbose(`  → ${item.path}`);
   const execSpinner = p.spinner();
   execSpinner.start(isDryRun ? 'Simulating cleanup …' : 'Cleaning up …');
 

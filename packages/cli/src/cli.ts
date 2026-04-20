@@ -7,6 +7,7 @@
  * Never call fs.rm or rimraf here (CLAUDE.md rule 1).
  */
 
+import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { cleanCommand } from './commands/clean.js';
 import { configCommand } from './commands/config.js';
@@ -14,12 +15,18 @@ import { doctorCommand } from './commands/doctor.js';
 import { scanCommand } from './commands/scan.js';
 import { undoCommand } from './commands/undo.js';
 
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json') as { version: string };
+
+import { setVerbose } from './verbose.js';
+
 const program = new Command();
 
 program
   .name('shed')
   .description('Safe, cross-platform disk cleanup for developers')
-  .version('0.0.0');
+  .version(version)
+  .option('-v, --verbose', 'Enable verbose logging');
 
 program
   .command('scan [path]')
@@ -52,6 +59,11 @@ program
   .argument('[key]', 'Configuration key')
   .argument('[value]', 'Configuration value (for set)')
   .action(configCommand);
+
+program.hook('preAction', () => {
+  const opts = program.opts<{ verbose?: boolean }>();
+  setVerbose(opts.verbose ?? false);
+});
 
 program.parseAsync(process.argv).catch((err: unknown) => {
   console.error('shed: fatal error:', err instanceof Error ? err.message : err);

@@ -1,14 +1,18 @@
 {
   "name": "@lxmanh/shed-cli",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.1",
   "description": "Shed CLI — safe, cross-platform disk cleanup for developers",
   "type": "module",
   "bin": {
     "shed": "./dist/cli.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "package.json"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/cli.ts --format esm --clean",
     "dev": "tsup src/cli.ts --format esm --watch",

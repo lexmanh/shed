@@ -14,6 +14,7 @@ import {
   XcodeDetector,
 } from '@lxmanh/shed-core';
 import pc from 'picocolors';
+import { verbose } from '../verbose.js';
 
 export interface ScanOptions {
   json?: boolean;
@@ -48,6 +49,7 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
   }
 
   const spinner = options.json ? null : p.spinner();
+  verbose(`scan root: ${rootDir}`);
   spinner?.start(`Scanning ${rootDir} …`);
 
   const scanner = new Scanner([
@@ -75,6 +77,8 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
 
   const totalBytes = allItems.reduce((sum, i) => sum + i.sizeBytes, 0);
 
+  verbose(`scan complete: ${projects.length} projects, ${globalItems.length} global items, ${allItems.length} total`);
+  for (const item of allItems) verbose(`  item: ${item.risk} ${item.path} (${item.sizeBytes} bytes)`);
   spinner?.stop(
     `Found ${pc.bold(String(allItems.length))} cleanable items across ${projects.length} project(s).`,
   );
