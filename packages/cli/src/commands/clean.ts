@@ -126,31 +126,81 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
   let selectedItems = eligibleItems;
 
   if (!options.yes) {
-    const choices = eligibleItems.map((item) => {
-      const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
-      const displayPath = home ? item.path.replace(home, '~') : item.path;
-      const warnings =
-        checkResults[allItems.indexOf(item)]?.reasons.filter((r: SafetyReason) => r.severity === 'warning') ?? [];
-      const warnStr =
-        warnings.length > 0 ? pc.yellow(` ⚠ ${warnings.map((w: SafetyReason) => w.message).join('; ')}`) : '';
-      return {
-        value: item,
-        label: `${RISK_BADGE[item.risk]}  ${displayPath}  ${pc.dim(formatBytes(item.sizeBytes))}${warnStr}`,
-      };
+    const home = process.env.HOME ?? process.env.USERPROFILE ?? '';
+
+    // Quick-select preset
+    const greenItems = eligibleItems.filter((i) => i.risk === RiskTier.Green);
+    const yellowItems = eligibleItems.filter((i) => i.risk === RiskTier.Yellow);
+
+    const greenBytes = greenItems.reduce((s, i) => s + i.sizeBytes, 0);
+    const yellowBytes = yellowItems.reduce((s, i) => s + i.sizeBytes, 0);
+    const allBytes = eligibleItems.reduce((s, i) => s + i.sizeBytes, 0);
+
+    const preset = await p.select({
+      message: 'What would you like to clean?',
+      options: [
+        {
+          value: 'all',
+          label: `All  ${pc.dim(`${eligibleItems.length} items · ${formatBytes(allBytes)}`)}`,
+        },
+        ...(greenItems.length > 0
+          ? [
+              {
+                value: 'green',
+                label: `${pc.green('Green only')}  ${pc.dim(`${greenItems.length} items · ${formatBytes(greenBytes)} · safest`)}`,
+              },
+            ]
+          : []),
+        ...(yellowItems.length > 0
+          ? [
+              {
+                value: 'yellow',
+                label: `${pc.yellow('Yellow only')}  ${pc.dim(`${yellowItems.length} items · ${formatBytes(yellowBytes)}`)}`,
+              },
+            ]
+          : []),
+        { value: 'custom', label: 'Custom  (pick individual items)' },
+      ],
     });
 
-    const selection = await p.multiselect({
-      message: 'Select items to clean (space to toggle, enter to confirm):',
-      options: choices,
-      required: false,
-    });
-
-    if (p.isCancel(selection)) {
+    if (p.isCancel(preset)) {
       p.cancel('Cleanup cancelled.');
       return;
     }
 
-    selectedItems = selection as typeof eligibleItems;
+    if (preset === 'all') {
+      selectedItems = eligibleItems;
+    } else if (preset === 'green') {
+      selectedItems = greenItems;
+    } else if (preset === 'yellow') {
+      selectedItems = yellowItems;
+    } else {
+      // Custom — show full multiselect
+      const choices = eligibleItems.map((item) => {
+        const displayPath = home ? item.path.replace(home, '~') : item.path;
+        const warnings =
+          checkResults[allItems.indexOf(item)]?.reasons.filter((r: SafetyReason) => r.severity === 'warning') ?? [];
+        const warnStr =
+          warnings.length > 0 ? pc.yellow(` ⚠ ${warnings.map((w: SafetyReason) => w.message).join('; ')}`) : '';
+        return {
+          value: item,
+          label: `${RISK_BADGE[item.risk]}  ${displayPath}  ${pc.dim(formatBytes(item.sizeBytes))}${warnStr}`,
+        };
+      });
+
+      const selection = await p.multiselect({
+        message: 'Select items to clean (space to toggle, enter to confirm):',
+        options: choices,
+        required: false,
+      });
+
+      if (p.isCancel(selection)) {
+        p.cancel('Cleanup cancelled.');
+        return;
+      }
+
+      selectedItems = selection as typeof eligibleItems;
+    }
   }
 
   if (selectedItems.length === 0) {
