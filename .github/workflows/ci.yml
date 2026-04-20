@@ -73,7 +73,7 @@ jobs:
               --exclude-dir=dist \
             | grep -v "packages/core/src/safety/safety-checker\.ts" \
             | grep -v "\.test\.ts" \
-            | grep -v "^[^:]*://"; then
+            | grep -vE "^\S+:[0-9]+:\s*(//|\*)" ; then
             echo ""
             echo "❌  Destructive syscall found outside SafetyChecker!"
             echo "    All destructive operations must go through"

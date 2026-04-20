@@ -1,0 +1,13 @@
+# Enforce LF line endings for all text files.
+# Prevents Biome formatter failures on Windows (CRLF vs LF diff).
+* text=auto eol=lf
+
+# Binaries — no line ending conversion.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
