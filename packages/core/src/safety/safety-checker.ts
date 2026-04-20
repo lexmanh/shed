@@ -18,7 +18,7 @@ import type {
   SafetyCheckResult,
   SafetyReason,
 } from '../types.js';
-import { gitStatusPorcelain } from './git.js';
+import { gitHasTrackedFiles, gitStatusPorcelain } from './git.js';
 import { RiskTier, TIER_POLICIES } from './risk-tiers.js';
 import { isSacredPathResolved, resolveToRealPath } from './sacred-paths.js';
 
@@ -86,7 +86,7 @@ export class SafetyChecker {
 
     // 2. Git awareness
     if (this.options.gitAware && item.projectRoot) {
-      const gitCheck = await this.checkGitState(item.projectRoot);
+      const gitCheck = await this.checkGitState(item.path, item.projectRoot);
       if (gitCheck) reasons.push(gitCheck);
     }
 
@@ -125,10 +125,16 @@ export class SafetyChecker {
    * Check if a project directory has uncommitted changes.
    * Returns a SafetyReason if dirty, undefined if clean or not a git repo.
    */
-  private async checkGitState(projectRoot: string): Promise<SafetyReason | undefined> {
+  private async checkGitState(
+    itemPath: string,
+    projectRoot: string,
+  ): Promise<SafetyReason | undefined> {
     const porcelain = await gitStatusPorcelain(projectRoot);
     if (porcelain === null) return undefined;
     if (porcelain.trim().length === 0) return undefined;
+    // Only block if the item itself has git-tracked files — gitignored paths (node_modules, build/, etc.) are safe
+    const hasTracked = await gitHasTrackedFiles(itemPath, projectRoot);
+    if (!hasTracked) return undefined;
     return {
       code: 'git-dirty',
       severity: 'block',

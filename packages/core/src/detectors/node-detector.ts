@@ -67,7 +67,10 @@ export class NodeDetector extends BaseDetector {
     const pkgJsonPath = join(dir, 'package.json');
     let pkgJson: { name?: string; workspaces?: unknown } = {};
     try {
-      pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf-8')) as { name?: string; workspaces?: unknown };
+      pkgJson = JSON.parse(await readFile(pkgJsonPath, 'utf-8')) as {
+        name?: string;
+        workspaces?: unknown;
+      };
     } catch {
       return null;
     }

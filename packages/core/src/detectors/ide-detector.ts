@@ -50,10 +50,7 @@ export class IdeDetector extends BaseDetector {
   override async scanGlobal(_ctx: DetectorContext): Promise<readonly CleanableItem[]> {
     const items: CleanableItem[] = [];
 
-    await Promise.all([
-      this.collectJetBrainsItems(items),
-      this.collectVSCodeItems(items),
-    ]);
+    await Promise.all([this.collectJetBrainsItems(items), this.collectVSCodeItems(items)]);
 
     return items;
   }
@@ -115,7 +112,7 @@ export class IdeDetector extends BaseDetector {
     if (!storageDir || !(await this.dirExists(storageDir))) return;
 
     items.push({
-      id: `global::ide::vscode::workspaceStorage`,
+      id: 'global::ide::vscode::workspaceStorage',
       path: storageDir,
       detector: this.id,
       risk: RiskTier.Green,

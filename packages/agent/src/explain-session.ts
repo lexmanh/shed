@@ -12,8 +12,8 @@
 
 import type { CleanableItem } from '@lxmanh/shed-core';
 import type { AIMessage, AIProvider, PrivacyPreview } from './provider.js';
-import { ALL_TOOLS } from './tools.js';
 import { executeToolCall } from './tool-executor.js';
+import { ALL_TOOLS } from './tools.js';
 
 const TOKEN_WARN = 40_000;
 const TOKEN_HARD_STOP = 100_000;
@@ -140,7 +140,9 @@ function buildPrivacyPreview(
     isLocal: false,
     dataIncluded: [
       `Scan root path: ${scanRoot}`,
-      ...(itemCount > 0 ? [`${itemCount} cleanable item paths (names only, no file contents)`] : []),
+      ...(itemCount > 0
+        ? [`${itemCount} cleanable item paths (names only, no file contents)`]
+        : []),
       'Project types detected (node, python, rust, etc.)',
       'Item sizes and risk tiers',
     ],

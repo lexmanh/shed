@@ -88,10 +88,7 @@ export async function createProvider(options: CreateProviderOptions): Promise<AI
   const { provider, model } = options;
 
   if (provider === 'ollama') {
-    return new OllamaProvider(
-      model ?? DEFAULT_MODELS.ollama,
-      options.ollamaEndpoint,
-    );
+    return new OllamaProvider(model ?? DEFAULT_MODELS.ollama, options.ollamaEndpoint);
   }
 
   const apiKey =

@@ -30,18 +30,17 @@ export class GeminiProvider implements AIProvider {
 
     const lastMsg = args.messages.filter((m) => m.role !== 'system').at(-1);
 
-    const sdkTools =
-      args.tools?.length
-        ? [
-            {
-              functionDeclarations: args.tools.map((t) => ({
-                name: t.name,
-                description: t.description,
-                parameters: t.inputSchema,
-              })),
-            },
-          ]
-        : undefined;
+    const sdkTools = args.tools?.length
+      ? [
+          {
+            functionDeclarations: args.tools.map((t) => ({
+              name: t.name,
+              description: t.description,
+              parameters: t.inputSchema,
+            })),
+          },
+        ]
+      : undefined;
 
     const chat = this.client.chats.create({
       model: this.model,
@@ -53,9 +52,7 @@ export class GeminiProvider implements AIProvider {
       },
     });
 
-    const response = await chat.sendMessage(
-      { message: lastMsg?.content ?? '' },
-    );
+    const response = await chat.sendMessage({ message: lastMsg?.content ?? '' });
 
     const text = response.text ?? '';
 
@@ -68,7 +65,9 @@ export class GeminiProvider implements AIProvider {
     const stopReason =
       toolCalls.length > 0
         ? 'tool_use'
-        : (response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? 'max_tokens' : 'end');
+        : response.candidates?.[0]?.finishReason === 'MAX_TOKENS'
+          ? 'max_tokens'
+          : 'end';
 
     const usage = response.usageMetadata;
 

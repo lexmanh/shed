@@ -9,8 +9,8 @@
 import { createFixture } from 'fs-fixture';
 import { describe, expect, it } from 'vitest';
 import { RiskTier } from '../safety/risk-tiers.js';
-import { IdeDetector } from './ide-detector.js';
 import type { DetectorContext } from './detector.js';
+import { IdeDetector } from './ide-detector.js';
 
 const ctx: DetectorContext = { scanRoot: '/', maxDepth: 5 };
 

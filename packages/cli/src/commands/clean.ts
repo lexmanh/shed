@@ -2,7 +2,9 @@ import { resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import {
   AndroidDetector,
+  type CleanableItem,
   CocoaPodsDetector,
+  type DetectedProject,
   DockerDetector,
   FlutterDetector,
   IdeDetector,
@@ -11,11 +13,9 @@ import {
   RiskTier,
   RustDetector,
   SafetyChecker,
+  type SafetyReason,
   Scanner,
   XcodeDetector,
-  type CleanableItem,
-  type DetectedProject,
-  type SafetyReason,
 } from '@lxmanh/shed-core';
 import pc from 'picocolors';
 import { verbose } from '../verbose.js';
@@ -78,9 +78,10 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
     scanner.scanGlobal(ctx),
   ]);
 
-  const allItems = [...projects.flatMap((proj: DetectedProject) => proj.items), ...globalItems].filter(
-    (i: CleanableItem) => options.includeRed || i.risk !== RiskTier.Red,
-  );
+  const allItems = [
+    ...projects.flatMap((proj: DetectedProject) => proj.items),
+    ...globalItems,
+  ].filter((i: CleanableItem) => options.includeRed || i.risk !== RiskTier.Red);
 
   verbose(`scan complete: ${allItems.length} cleanable items`);
   spinner.stop(`Found ${pc.bold(String(allItems.length))} cleanable items.`);
@@ -179,9 +180,13 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
       const choices = eligibleItems.map((item) => {
         const displayPath = home ? item.path.replace(home, '~') : item.path;
         const warnings =
-          checkResults[allItems.indexOf(item)]?.reasons.filter((r: SafetyReason) => r.severity === 'warning') ?? [];
+          checkResults[allItems.indexOf(item)]?.reasons.filter(
+            (r: SafetyReason) => r.severity === 'warning',
+          ) ?? [];
         const warnStr =
-          warnings.length > 0 ? pc.yellow(` ⚠ ${warnings.map((w: SafetyReason) => w.message).join('; ')}`) : '';
+          warnings.length > 0
+            ? pc.yellow(` ⚠ ${warnings.map((w: SafetyReason) => w.message).join('; ')}`)
+            : '';
         return {
           value: item,
           label: `${RISK_BADGE[item.risk]}  ${displayPath}  ${pc.dim(formatBytes(item.sizeBytes))}${warnStr}`,
@@ -224,7 +229,9 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
   }
 
   // ── 5. Execute ────────────────────────────────────────────────────────────
-  verbose(`executing ${selectedItems.length} items, dryRun=${isDryRun}, hardDelete=${options.hardDelete ?? false}`);
+  verbose(
+    `executing ${selectedItems.length} items, dryRun=${isDryRun}, hardDelete=${options.hardDelete ?? false}`,
+  );
   for (const item of selectedItems) verbose(`  → ${item.path}`);
   const execSpinner = p.spinner();
   execSpinner.start(isDryRun ? 'Simulating cleanup …' : 'Cleaning up …');

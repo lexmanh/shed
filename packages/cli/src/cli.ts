@@ -18,8 +18,8 @@ import { undoCommand } from './commands/undo.js';
 const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
 
-import { setVerbose } from './verbose.js';
 import { printLogo } from './logo.js';
+import { setVerbose } from './verbose.js';
 
 const program = new Command();
 

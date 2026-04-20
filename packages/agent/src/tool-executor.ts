@@ -3,7 +3,6 @@
  * All operations are READ-ONLY. AI cannot trigger cleanup.
  */
 
-import { execa } from 'execa';
 import {
   AndroidDetector,
   CocoaPodsDetector,
@@ -18,6 +17,7 @@ import {
   XcodeDetector,
 } from '@lxmanh/shed-core';
 import type { CleanableItem } from '@lxmanh/shed-core';
+import { execa } from 'execa';
 
 function makeScanner(): Scanner {
   return new Scanner([

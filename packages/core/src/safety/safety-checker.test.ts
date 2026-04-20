@@ -154,13 +154,16 @@ describe('SafetyChecker', () => {
   });
 
   describe('git awareness', () => {
-    it('blocks when project has uncommitted changes', async () => {
-      const fixture = await createFixture({ 'untracked.txt': 'hi' });
+    it('blocks when project has uncommitted changes on a tracked path', async () => {
+      const fixture = await createFixture({ 'tracked.ts': 'export {}', 'dirty.txt': 'hi' });
       try {
         await initGit(fixture.path);
+        await execa('git', ['add', 'tracked.ts'], { cwd: fixture.path });
+        await execa('git', ['commit', '-q', '-m', 'init'], { cwd: fixture.path });
+        const trackedPath = join(fixture.path, 'tracked.ts');
         const checker = new SafetyChecker();
         const result = await checker.check(
-          mkItem({ path: '/tmp/yellow-item', projectRoot: fixture.path }),
+          mkItem({ path: trackedPath, projectRoot: fixture.path }),
         );
         expect(result.allowed).toBe(false);
         const reason = result.reasons.find((r) => r.code === 'git-dirty');
@@ -212,6 +215,50 @@ describe('SafetyChecker', () => {
         mkItem({ path: '/tmp/safe', projectRoot: '/absolutely/does/not/exist/nowhere' }),
       );
       expect(result.reasons.find((r) => r.code === 'git-dirty')).toBeUndefined();
+    });
+
+    it('allows gitignored item even when project has uncommitted changes', async () => {
+      const fixture = await createFixture({
+        '.gitignore': 'node_modules\n',
+        'src/index.ts': 'export {}', // untracked — makes repo dirty
+      });
+      try {
+        await initGit(fixture.path);
+        const nodeModulesPath = join(fixture.path, 'node_modules');
+        // Create node_modules so the item path exists
+        await execa('mkdir', ['-p', nodeModulesPath]);
+        const checker = new SafetyChecker();
+        const result = await checker.check(
+          mkItem({ path: nodeModulesPath, projectRoot: fixture.path }),
+        );
+        // node_modules is gitignored → should NOT be blocked by dirty working tree
+        expect(result.reasons.find((r) => r.code === 'git-dirty')).toBeUndefined();
+      } finally {
+        await fixture.rm();
+      }
+    });
+
+    it('blocks tracked file when project has uncommitted changes', async () => {
+      const fixture = await createFixture({
+        'important.ts': 'export const x = 1',
+        'untracked.txt': 'dirty',
+      });
+      try {
+        await initGit(fixture.path);
+        // Stage and commit important.ts so it's tracked
+        await execa('git', ['add', 'important.ts'], { cwd: fixture.path });
+        await execa('git', ['commit', '-q', '-m', 'add file'], { cwd: fixture.path });
+        // Now modify it to make it dirty
+        await execa('sh', ['-c', `echo 'changed' > ${join(fixture.path, 'important.ts')}`]);
+        const checker = new SafetyChecker();
+        const result = await checker.check(
+          mkItem({ path: join(fixture.path, 'important.ts'), projectRoot: fixture.path }),
+        );
+        expect(result.allowed).toBe(false);
+        expect(result.reasons.find((r) => r.code === 'git-dirty')).toBeDefined();
+      } finally {
+        await fixture.rm();
+      }
     });
   });
 
