@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+        env:
+          CI: true
+
+      - name: Build
+        run: pnpm build
+
+  safety-audit:
+    name: Safety Rule Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for forbidden destructive syscalls outside SafetyChecker
+        run: |
+          # Fail if fs.rm / fs.unlink / rimraf appear anywhere outside the SafetyChecker module
+          if grep -rE "(fs\.rm|fs\.unlink|rimraf)" packages/ \
+              --include="*.ts" \
+              --exclude-dir=node_modules \
+              --exclude-dir=dist \
+              | grep -v "packages/core/src/safety/" \
+              | grep -v ".test.ts"; then
+            echo "❌ Destructive syscall found outside SafetyChecker!"
+            echo "All destructive operations must go through @lexmanh/shed-core SafetyChecker."
+            exit 1
+          fi
+          echo "✅ No forbidden destructive syscalls found."
