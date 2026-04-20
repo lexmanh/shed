@@ -1,0 +1,44 @@
+name: Feature Request
+description: Suggest a new detector, command, or improvement
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of request
+      options:
+        - New detector (e.g. Go, Java, .NET, Ruby...)
+        - New command / flag
+        - Improvement to existing behavior
+        - Platform support (OS-specific)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What disk clutter is this solving? How much space does it typically waste?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should Shed do? What paths/files should be cleaned?
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety considerations
+      description: |
+        What's the risk tier (Green/Yellow/Red)?
+        Are there files that must never be touched (lock files, user data, etc.)?
+        How would Shed know the project is not actively in use?
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

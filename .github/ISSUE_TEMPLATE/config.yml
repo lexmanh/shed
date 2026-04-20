@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security / urgent data loss
+    url: https://github.com/lexmanh/shed/security/advisories/new
+    about: For urgent safety issues, please use GitHub's private security advisory.

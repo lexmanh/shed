@@ -1,83 +1,69 @@
 # Contributing to Shed
 
-Shed is currently in **closed beta** — external contributions are not yet being accepted. This file exists to document the contribution process for when we go public (estimated Q3 2026).
+Thanks for your interest in contributing! Shed is a **destructive tool** — it deletes files. Safety is the top priority in every review.
 
-During the beta phase, beta testers can contribute via:
-- Bug reports on the private issue tracker
-- Feature suggestions in Discussions
-- Feedback on Discord/Telegram
+## Before starting work
 
-## When we go public
+1. **Read [CLAUDE.md](./CLAUDE.md)** — it contains non-negotiable safety rules that apply to all contributions
+2. Check existing issues/PRs to avoid duplicate work
+3. For non-trivial changes, **open an issue first** to discuss your approach
+4. Safety-critical changes (anything in `packages/core/src/safety/`) require maintainer sign-off before code review begins
 
-### Before starting work
-
-1. **Read [CLAUDE.md](./CLAUDE.md)** — it contains non-negotiable safety rules that apply to all contributions, whether you use Claude Code or not
-2. Check existing issues/PRs — avoid duplicate work
-3. For non-trivial changes, **open an issue first** to discuss approach
-4. Safety-critical changes (anything touching `packages/core/src/safety/`) require maintainer approval before code review
-
-### Development setup
+## Development setup
 
 ```bash
-git clone https://github.com/<TBD>/shed
+git clone https://github.com/lexmanh/shed
 cd shed
 pnpm install
-pnpm test    # verify your setup
+pnpm test        # verify your setup
+pnpm dev         # watch mode across all packages
 ```
 
-### Making changes
+## Making changes
 
 - Branch from `main`: `git checkout -b feat/your-feature`
-- **Tests first** for safety-critical code (anything in `core/safety/` or `core/detectors/`)
-- Follow existing patterns — if unsure, look at similar existing code
-- Conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
+- **Tests first** for anything in `core/safety/` or `core/detectors/` (CLAUDE.md rule 3)
+- Follow existing patterns — look at similar code when unsure
+- [Conventional commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`
 - Keep PRs focused — one logical change per PR
 
-### PR checklist
+## PR checklist
 
 - [ ] Tests added/updated
 - [ ] `pnpm typecheck` passes
-- [ ] `pnpm test` passes on your machine
+- [ ] `pnpm test` passes
 - [ ] `pnpm lint` passes
-- [ ] Updated docs if user-facing behavior changed
-- [ ] Safety review self-check: does this PR touch any deletion logic? If yes, explain in PR description.
+- [ ] Docs updated if user-facing behavior changed
+- [ ] If this PR touches deletion logic: explain the safety reasoning in the PR description
 
-### Adding a new detector
+## Adding a new detector
 
 Detectors are the most common extension point. To add support for a new runtime/tool:
 
-1. Read `docs/detector-plugin-guide.md`
-2. Create `packages/core/src/detectors/YourDetector.ts`
-3. Implement `ProjectDetector` interface
-4. Add to `packages/core/src/detectors/index.ts`
-5. Write unit tests with fixtures in `packages/core/src/detectors/YourDetector.test.ts`
-6. Document risk tier assignments and safety checks
-7. Add integration test in `e2e/detectors/`
+1. Create `packages/core/src/detectors/your-detector.ts`
+2. Implement the `ProjectDetector` interface
+3. Export from `packages/core/src/detectors/index.ts`
+4. Write tests with temp filesystem fixtures (see existing detector tests for patterns)
+5. Document risk tier assignments and any edge cases
 
-### Code review priorities
+## Code review priorities
 
-Reviewers prioritize (in order):
 1. **Safety** — could this destroy user data?
-2. **Correctness** — does it handle edge cases?
+2. **Correctness** — edge cases handled?
 3. **Cross-platform** — works on macOS, Windows, Linux?
 4. **Tests** — adequately covered?
-5. **Code style** — consistent with codebase?
-6. **Performance** — any obvious issues?
+5. **Style** — consistent with codebase?
 
-### What NOT to do
+## What NOT to do
 
-- Don't add dependencies without justification (check license, bundle impact, maintenance status)
-- Don't call `fs.rm` / `rimraf` / `rm -rf` outside `SafetyChecker`
-- Don't add "always delete" cleanup paths without tiered classification
-- Don't bypass dry-run mode
+- Don't call `fs.rm` / `rimraf` / `rm -rf` outside `SafetyChecker` (CLAUDE.md rule 1)
+- Don't add new cleanup paths without risk tier classification (CLAUDE.md rule 5)
+- Don't bypass dry-run mode (CLAUDE.md rule 2)
 - Don't touch sacred paths listed in CLAUDE.md rule 4
+- Don't add dependencies without checking license, bundle size, and maintenance status
 
-### Questions?
+## Reporting security / safety issues
 
-- General discussion: GitHub Discussions
-- Bugs: GitHub Issues
-- Security/safety concerns: email maintainer directly (don't file publicly until fixed)
+If you find a bug that could cause **data loss** or touch **sacred paths**, please email the maintainer directly before filing a public issue. Do not disclose publicly until a fix is available.
 
----
-
-Thank you for your interest in contributing to Shed. We take safety seriously, and your careful attention to the rules above helps keep every user's data safe.
+For general bugs and feature requests, use GitHub Issues.

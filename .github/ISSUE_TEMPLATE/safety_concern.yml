@@ -1,0 +1,41 @@
+name: Safety Concern
+description: Report a potential data loss risk or safety bypass (non-urgent; for urgent issues email the maintainer directly)
+labels: ["safety", "priority: critical"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **Urgent data loss?** Email the maintainer directly before filing here.
+        >
+        > This form is for safety concerns that are not actively exploitable or have already been disclosed privately.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the safety concern
+      description: What path/operation is at risk? Under what conditions?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      render: shell
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Data loss (files deleted that should not be)
+        - Sacred path touched
+        - Dry-run bypassed
+        - Other safety invariant violated
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested fix (optional)
