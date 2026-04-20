@@ -19,6 +19,7 @@ const require = createRequire(import.meta.url);
 const { version } = require('../package.json') as { version: string };
 
 import { setVerbose } from './verbose.js';
+import { printLogo } from './logo.js';
 
 const program = new Command();
 
@@ -60,9 +61,12 @@ program
   .argument('[value]', 'Configuration value (for set)')
   .action(configCommand);
 
-program.hook('preAction', () => {
+program.hook('preAction', (_thisCommand, actionCommand) => {
   const opts = program.opts<{ verbose?: boolean }>();
   setVerbose(opts.verbose ?? false);
+  // Skip logo for --json mode
+  const cmdOpts = actionCommand.opts<{ json?: boolean }>();
+  if (!cmdOpts.json) printLogo(version);
 });
 
 program.parseAsync(process.argv).catch((err: unknown) => {
