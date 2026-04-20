@@ -13,8 +13,8 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
   const spinner = p.spinner();
   spinner.start(`Scanning ${path}...`);
 
-  // TODO: invoke @lexmanh/shed-core scanner
-  // const { scanProjects } = await import('@lexmanh/shed-core');
+  // TODO: invoke @lxmanh/shed-core scanner
+  // const { scanProjects } = await import('@lxmanh/shed-core');
   // const results = await scanProjects({ root: path, maxDepth: 5 });
 
   await new Promise((r) => setTimeout(r, 500)); // placeholder

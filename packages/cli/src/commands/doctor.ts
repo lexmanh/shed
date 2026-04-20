@@ -1,7 +1,7 @@
+import { arch, homedir, platform, release } from 'node:os';
 import * as p from '@clack/prompts';
-import pc from 'picocolors';
-import { platform, arch, release, homedir } from 'node:os';
 import { execa } from 'execa';
+import pc from 'picocolors';
 
 export async function doctorCommand(): Promise<void> {
   p.intro(pc.bgGreen(pc.black(' shed doctor ')));

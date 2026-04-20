@@ -26,7 +26,7 @@ Interested in becoming a beta tester? See [BETA_PROGRAM.md](./BETA_PROGRAM.md).
 
 ```bash
 # Install
-npm install -g @lexmanh/shed-cli
+npm install -g @lxmanh/shed-cli
 
 # Scan (safe — read-only)
 shed scan ~
@@ -45,10 +45,10 @@ shed scan --explain-with-ai
 
 Monorepo with 4 packages:
 
-- `@lexmanh/shed-core` — project detection, safety checks, risk classification
-- `@lexmanh/shed-cli` — the `shed` binary
-- `@lexmanh/shed-agent` — AI provider abstraction (Anthropic, OpenAI, Ollama)
-- `@lexmanh/shed-mcp-server` — MCP server for Claude Desktop and Claude Code
+- `@lxmanh/shed-core` — project detection, safety checks, risk classification
+- `@lxmanh/shed-cli` — the `shed` binary
+- `@lxmanh/shed-agent` — AI provider abstraction (Anthropic, OpenAI, Ollama)
+- `@lxmanh/shed-mcp-server` — MCP server for Claude Desktop and Claude Code
 
 See [PLAN.md](./PLAN.md) for detailed roadmap and design decisions.
 

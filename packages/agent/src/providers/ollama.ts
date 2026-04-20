@@ -4,7 +4,7 @@
  * TODO: flesh out in Phase 4.
  */
 
-import type { AIProvider, AIMessage, AITool, AIResponse } from '../provider.js';
+import type { AIMessage, AIProvider, AIResponse, AITool } from '../provider.js';
 
 export class OllamaProvider implements AIProvider {
   readonly name = 'ollama';

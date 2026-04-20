@@ -32,10 +32,10 @@ Every cleanup operation passes through a tiered safety framework that knows abou
 Monorepo (`pnpm` workspaces) với 4 packages:
 
 ```
-@lexmanh/shed-core          — scan, detect, classify, safety checks
-@lexmanh/shed-cli           — `shed` binary
-@lexmanh/shed-agent         — AI provider abstraction
-@lexmanh/shed-mcp-server    — MCP for Claude Desktop/Code
+@lxmanh/shed-core          — scan, detect, classify, safety checks
+@lxmanh/shed-cli           — `shed` binary
+@lxmanh/shed-agent         — AI provider abstraction
+@lxmanh/shed-mcp-server    — MCP for Claude Desktop/Code
 ```
 
 Chi tiết kiến trúc: xem `CLAUDE.md` section 3 và `docs/architecture.md` (TBD).
@@ -168,7 +168,7 @@ Detectors:
 **Track A: MCP Server**
 - Implement MCP protocol
 - Tools: `scan_projects`, `analyze_project`, `estimate_cleanup`, `execute_cleanup_plan`
-- Distribution: một binary standalone `@lexmanh/shed-mcp-server`
+- Distribution: một binary standalone `@lxmanh/shed-mcp-server`
 - Setup guide cho Claude Desktop + Claude Code
 - E2E test với mock MCP client
 
@@ -195,7 +195,7 @@ Song song với Phase 4, start closed beta:
 ### Phase 6 — Public Launch (Week 15-16)
 
 - [ ] Flip GitHub repo public
-- [ ] Homebrew tap setup (`brew tap lexmanh/shed`)
+- [ ] Homebrew tap setup (`brew tap lexmanh/shed`) — GitHub repo URL, giữ nguyên `lexmanh`
 - [ ] Scoop manifest cho Windows
 - [ ] npm publish stable
 - [ ] Landing page trên GitHub Pages với demo GIF
@@ -277,7 +277,7 @@ Song song với Phase 4, start closed beta:
 
 ## Open Questions (decide during Phase 0-1)
 
-1. Tên npm package scope: `@lexmanh` (cần register org) vs `@manh/shed-*` (personal) vs unscoped `@lexmanh/shed-cli`?
+1. ~~Tên npm package scope~~ — **Đã quyết định:** `@lxmanh/shed-*` (npm username `lxmanh`, personal scope, free).
 2. License: MIT (max adoption) vs Apache 2.0 (patent protection)?
 3. Đã có domain `shed.dev`? Check availability.
 4. Beta tester recruiting: team cũ? Twitter? Vietnamese dev community?

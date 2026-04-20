@@ -31,10 +31,7 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
   }
 
   // TODO: invoke scan + SafetyChecker.execute() from core
-  p.note(
-    'Clean command not yet implemented.\nSee CLAUDE.md Phase 1-2 for the plan.',
-    'Status',
-  );
+  p.note('Clean command not yet implemented.\nSee CLAUDE.md Phase 1-2 for the plan.', 'Status');
 
   p.outro(pc.dim(`Dry-run: ${isDryRun}, target: ${path}`));
 }

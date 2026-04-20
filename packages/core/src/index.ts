@@ -1,5 +1,5 @@
 /**
- * @lexmanh/shed-core
+ * @lxmanh/shed-core
  *
  * Public API for the Shed core library.
  * This package contains pure logic — no user I/O.
@@ -8,5 +8,7 @@
 
 export * from './safety/index.js';
 export * from './detectors/index.js';
+export * from './platform/index.js';
 export * from './types.js';
 export * from './errors.js';
+export * from './logger.js';

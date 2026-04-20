@@ -5,7 +5,10 @@
 
 export class ShedError extends Error {
   override readonly name: string = 'ShedError';
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(
+    message: string,
+    public override readonly cause?: unknown,
+  ) {
     super(message);
   }
 }

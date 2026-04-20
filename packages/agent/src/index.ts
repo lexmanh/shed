@@ -1,5 +1,5 @@
 /**
- * @lexmanh/shed-agent
+ * @lxmanh/shed-agent
  *
  * AI provider abstraction for Shed.
  * Supports Anthropic, OpenAI, and Ollama (local).

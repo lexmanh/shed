@@ -1,5 +1,5 @@
 {
-  "name": "@lexmanh/shed-cli",
+  "name": "@lxmanh/shed-cli",
   "version": "0.0.0",
   "description": "Shed CLI — safe, cross-platform disk cleanup for developers",
   "type": "module",
@@ -10,15 +10,16 @@
   "scripts": {
     "build": "tsup src/cli.ts --format esm --clean",
     "dev": "tsup src/cli.ts --format esm --watch",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",
-    "@lexmanh/shed-core": "workspace:*",
+    "@lxmanh/shed-core": "workspace:*",
     "commander": "^12.1.0",
     "conf": "^13.1.0",
+    "execa": "^9.5.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {

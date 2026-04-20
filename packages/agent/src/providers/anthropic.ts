@@ -3,13 +3,16 @@
  * TODO: flesh out in Phase 4.
  */
 
-import type { AIProvider, AIMessage, AITool, AIResponse } from '../provider.js';
+import type { AIMessage, AIProvider, AIResponse, AITool } from '../provider.js';
 
 export class AnthropicProvider implements AIProvider {
   readonly name = 'anthropic';
   readonly isLocal = false;
 
-  constructor(private readonly apiKey: string, private readonly model = 'claude-opus-4-7') {}
+  constructor(
+    private readonly apiKey: string,
+    private readonly model = 'claude-opus-4-7',
+  ) {}
 
   async chat(_args: {
     messages: readonly AIMessage[];

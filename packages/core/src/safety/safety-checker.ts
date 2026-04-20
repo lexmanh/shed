@@ -9,7 +9,8 @@
  * (CLAUDE.md rule 3).
  */
 
-import { execa } from 'execa';
+import { DryRunViolation, SafetyViolationError } from '../errors.js';
+import { type PlatformApi, getPlatform } from '../platform/index.js';
 import type {
   CleanableItem,
   ExecuteOptions,
@@ -17,9 +18,9 @@ import type {
   SafetyCheckResult,
   SafetyReason,
 } from '../types.js';
-import { DryRunViolation, SafetyViolationError } from '../errors.js';
+import { gitStatusPorcelain } from './git.js';
 import { RiskTier, TIER_POLICIES } from './risk-tiers.js';
-import { isSacredPath } from './sacred-paths.js';
+import { isSacredPathResolved, resolveToRealPath } from './sacred-paths.js';
 
 export interface SafetyCheckerOptions {
   /** Age threshold in days — items modified more recently are skipped */
@@ -30,6 +31,8 @@ export interface SafetyCheckerOptions {
   readonly gitAware: boolean;
   /** Check lsof/Get-Process before deletion */
   readonly processAware: boolean;
+  /** Platform abstraction — injectable for tests */
+  readonly platform: PlatformApi;
 }
 
 export const DEFAULT_SAFETY_OPTIONS: SafetyCheckerOptions = {
@@ -37,6 +40,7 @@ export const DEFAULT_SAFETY_OPTIONS: SafetyCheckerOptions = {
   sizeWarningBytes: 10 * 1024 * 1024 * 1024,
   gitAware: true,
   processAware: true,
+  platform: getPlatform(),
 };
 
 export class SafetyChecker {
@@ -60,8 +64,13 @@ export class SafetyChecker {
   async check(item: CleanableItem): Promise<SafetyCheckResult> {
     const reasons: SafetyReason[] = [];
 
-    // 1. Sacred path guard (CLAUDE.md rule 4) — absolute block
-    if (isSacredPath(item.path)) {
+    // 1. Sacred path guard (CLAUDE.md rule 4) — absolute block.
+    //    Check both the as-given path AND the resolved real path, so
+    //    symlinks pointing into sacred directories are caught.
+    const realPath = await resolveToRealPath(item.path);
+    const sacred =
+      (await isSacredPathResolved(item.path)) || (await isSacredPathResolved(realPath));
+    if (sacred) {
       return {
         allowed: false,
         reasons: [
@@ -115,39 +124,39 @@ export class SafetyChecker {
   /**
    * Check if a project directory has uncommitted changes.
    * Returns a SafetyReason if dirty, undefined if clean or not a git repo.
-   *
-   * TODO: implement with tests first.
    */
   private async checkGitState(projectRoot: string): Promise<SafetyReason | undefined> {
-    try {
-      const { stdout } = await execa('git', ['status', '--porcelain'], {
-        cwd: projectRoot,
-        reject: false,
-      });
-      if (stdout.trim().length > 0) {
-        return {
-          code: 'git-dirty',
-          severity: 'block',
-          message: `Git repo at ${projectRoot} has uncommitted changes.`,
-          suggestion: 'Commit, stash, or discard changes before cleanup.',
-        };
-      }
-      return undefined;
-    } catch {
-      // Not a git repo, or git not installed — not a blocker by itself
-      return undefined;
-    }
+    const porcelain = await gitStatusPorcelain(projectRoot);
+    if (porcelain === null) return undefined;
+    if (porcelain.trim().length === 0) return undefined;
+    return {
+      code: 'git-dirty',
+      severity: 'block',
+      message: `Git repo at ${projectRoot} has uncommitted changes.`,
+      suggestion: 'Commit, stash, or discard changes before cleanup.',
+    };
   }
 
   /**
    * Check if any process is currently holding a file within the path.
-   * Uses `lsof` on Unix, `handle.exe` or similar on Windows.
-   *
-   * TODO: implement. This is platform-specific.
+   * Delegates to the injected PlatformApi (lsof on Unix, stub on Win32).
+   * Any error from the platform layer is absorbed as "no holder" so
+   * detection failures do not block legitimate cleanup.
    */
-  private async checkProcessHoldingPath(_path: string): Promise<SafetyReason | undefined> {
-    // Stub: implement in Phase 0
-    return undefined;
+  private async checkProcessHoldingPath(path: string): Promise<SafetyReason | undefined> {
+    let holder = null;
+    try {
+      holder = await this.options.platform.isPathHeldByProcess(path);
+    } catch {
+      return undefined;
+    }
+    if (!holder) return undefined;
+    return {
+      code: 'process-holding-file',
+      severity: 'block',
+      message: `Process ${holder.command} (pid ${holder.pid}) has files open in ${path}.`,
+      suggestion: 'Stop the process or close the files before cleanup.',
+    };
   }
 
   /**
@@ -194,10 +203,7 @@ export class SafetyChecker {
    * TODO: implement actual deletion via `trash` package (soft) or
    * `fs.rm` (hard). Full implementation deferred to Phase 1.
    */
-  async execute(
-    items: readonly CleanableItem[],
-    options: ExecuteOptions,
-  ): Promise<ExecuteResult> {
+  async execute(items: readonly CleanableItem[], options: ExecuteOptions): Promise<ExecuteResult> {
     const succeeded: CleanableItem[] = [];
     const skipped: { item: CleanableItem; reason: string }[] = [];
     const failed: { item: CleanableItem; error: string }[] = [];
@@ -261,11 +267,10 @@ export class SafetyChecker {
     if (hardDelete) {
       // await fs.rm(path, { recursive: true, force: true });
       throw new DryRunViolation(`Hard delete not yet implemented: ${path}`);
-    } else {
-      // const { default: trash } = await import('trash');
-      // await trash(path);
-      throw new DryRunViolation(`Trash deletion not yet implemented: ${path}`);
     }
+    // const { default: trash } = await import('trash');
+    // await trash(path);
+    throw new DryRunViolation(`Trash deletion not yet implemented: ${path}`);
   }
 }
 

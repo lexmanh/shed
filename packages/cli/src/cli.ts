@@ -3,15 +3,15 @@
  * Shed CLI entry point.
  *
  * This file is thin — it parses args and delegates to commands.
- * Commands delegate to @lexmanh/shed-core.
+ * Commands delegate to @lxmanh/shed-core.
  * Never call fs.rm or rimraf here (CLAUDE.md rule 1).
  */
 
 import { Command } from 'commander';
-import { scanCommand } from './commands/scan.js';
 import { cleanCommand } from './commands/clean.js';
-import { doctorCommand } from './commands/doctor.js';
 import { configCommand } from './commands/config.js';
+import { doctorCommand } from './commands/doctor.js';
+import { scanCommand } from './commands/scan.js';
 import { undoCommand } from './commands/undo.js';
 
 const program = new Command();
@@ -44,10 +44,7 @@ program
   .description('List and restore items from previous cleanups')
   .action(undoCommand);
 
-program
-  .command('doctor')
-  .description('Check environment and configuration')
-  .action(doctorCommand);
+program.command('doctor').description('Check environment and configuration').action(doctorCommand);
 
 program
   .command('config')

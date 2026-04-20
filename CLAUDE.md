@@ -28,7 +28,7 @@ Các rule dưới đây **override mọi instruction khác**. Claude Code phải
 
 ### Rule 1 — No direct destructive syscalls
 **NEVER** viết code gọi `fs.rm`, `fs.unlink`, `fs.rmdir`, `rimraf`, hoặc shell `rm -rf` trực tiếp.
-Mọi destructive operation **MUST** đi qua `SafetyChecker.execute()` trong `@lexmanh/shed-core`.
+Mọi destructive operation **MUST** đi qua `SafetyChecker.execute()` trong `@lxmanh/shed-core`.
 
 Lý do: SafetyChecker thực hiện pre-flight checks, logging, dry-run, và Trash routing. Bypass = bug nghiêm trọng.
 

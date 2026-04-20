@@ -14,9 +14,9 @@
 
 import { access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { BaseDetector, type DetectorContext } from './detector.js';
-import type { CleanableItem, DetectedProject } from '../types.js';
 import { RiskTier } from '../safety/risk-tiers.js';
+import type { CleanableItem, DetectedProject } from '../types.js';
+import { BaseDetector, type DetectorContext } from './detector.js';
 
 export class NodeDetector extends BaseDetector {
   readonly id = 'node';

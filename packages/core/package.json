@@ -1,5 +1,5 @@
 {
-  "name": "@lexmanh/shed-core",
+  "name": "@lxmanh/shed-core",
   "version": "0.0.0",
   "description": "Core logic for Shed: project detection, safety checks, risk classification",
   "type": "module",
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "fs-fixture": "^2.13.0",
     "memfs": "^4.15.0",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0",
