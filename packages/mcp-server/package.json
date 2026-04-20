@@ -1,0 +1,32 @@
+{
+  "name": "@lxmanh/shed-mcp-server",
+  "version": "0.0.0",
+  "description": "MCP server for Shed — exposes scan/analyze/cleanup tools to Claude Desktop and Claude Code",
+  "type": "module",
+  "bin": {
+    "shed-mcp": "./dist/server.js"
+  },
+  "main": "./dist/server.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/server.ts --format esm --clean",
+    "dev": "tsup src/server.ts --format esm --watch",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lxmanh/shed-agent": "workspace:^",
+    "@lxmanh/shed-core": "workspace:^",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}
