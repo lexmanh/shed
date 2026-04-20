@@ -102,7 +102,19 @@ function matchesWindowsSacred(path: string): boolean {
  */
 export function isSacredPath(absolutePath: string): boolean {
   if (isWindowsStylePath(absolutePath)) {
-    return matchesWindowsSacred(absolutePath);
+    // Check Windows system paths (C:\Windows, C:\Program Files, etc.)
+    if (matchesWindowsSacred(absolutePath)) return true;
+    // Also check user sacred paths expanded to the Windows home directory
+    // (e.g. ~/.ssh → C:\Users\runneradmin\.ssh)
+    const normalizedInput = normalizeWindows(absolutePath);
+    for (const p of SACRED_USER_PATHS) {
+      const expanded = expandHome(p);
+      if (!isWindowsStylePath(expanded)) continue;
+      const norm = normalizeWindows(expanded);
+      if (normalizedInput === norm) return true;
+      if (normalizedInput.startsWith(`${norm}\\`)) return true;
+    }
+    return false;
   }
 
   const normalized = resolve(absolutePath);
@@ -157,6 +169,8 @@ async function getResolvedSacredPaths(): Promise<readonly string[]> {
  */
 export async function isSacredPathResolved(absolutePath: string): Promise<boolean> {
   if (isSacredPath(absolutePath)) return true;
+  // Windows paths are fully handled by the sync isSacredPath above.
+  // Skip the async realpath check to avoid cross-platform path confusion.
   if (isWindowsStylePath(absolutePath)) return false;
   const normalized = resolve(absolutePath);
   const sacred = await getResolvedSacredPaths();
