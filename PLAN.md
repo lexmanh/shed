@@ -38,8 +38,6 @@ Monorepo (`pnpm` workspaces) với 4 packages:
 @lxmanh/shed-mcp-server    — MCP for Claude Desktop/Code
 ```
 
-Chi tiết kiến trúc: xem `CLAUDE.md` section 3 và `docs/architecture.md` (TBD).
-
 ---
 
 ## Safety Framework — The Core Differentiator
@@ -49,237 +47,186 @@ Mọi thao tác cleanup được phân loại vào 3 tier:
 **🟢 Green Tier — Regeneratable, low risk**
 - npm/yarn/pnpm global cache
 - Homebrew cleanup
-- Docker dangling images (không dùng)
+- Docker dangling images
 - Rust `target/` ở project đã git-clean
 - Python `__pycache__/`, `.pytest_cache/`
-- Browser caches
-
-Xoá mặc định với confirmation tóm tắt.
 
 **🟡 Yellow Tier — Context-dependent**
-- `node_modules/` (cần check age + git state)
-- `venv/`, `.venv/` (check active Python env)
+- `node_modules/` (check age + git state + workspace root)
+- `venv/`, `.venv/`
 - `build/`, `dist/` directories
 - Flutter `build/`, `.dart_tool/`
-- Gradle project cache
-
-Xoá sau khi pass safety checks: git-clean, age > threshold, no running process, user confirmation per-group.
+- CocoaPods `Pods/`
 
 **🔴 Red Tier — Stateful, opt-in only**
-- Xcode Simulator Devices (có user data apps)
-- Xcode DerivedData cho project mở trong IDE gần đây (< 7 ngày)
-- iOS `Podfile.lock`, `Gemfile.lock`, any git-tracked lock file
+- Xcode Simulator Devices
+- Any git-tracked lock file
 - System logs
 - Time Machine snapshots
 
-**KHÔNG** xoá trừ khi user pass `--include-red` flag và confirm từng cái một.
+### Safety Checks
 
-### Safety Checks (run trước mọi Yellow/Red operation)
-
-1. **Git-aware**: Nếu path là trong git repo → `git status --porcelain` phải empty. Có uncommitted changes → SKIP + warn.
-2. **Process-aware**: Check `lsof` (Unix) / `Get-Process` (Win) xem có process đang hold file không. Yes → SKIP.
-3. **Recency guard**: Project modified < N ngày (default 30) → SKIP unless user override.
-4. **Lockfile guard**: Trước khi xoá `node_modules/`, check `package-lock.json` có được git-tracked không. Yes → preserve lock, chỉ xoá node_modules.
-5. **Symlink guard**: Không follow symlinks ra ngoài project root.
-6. **Size sanity**: Nếu một thao tác xoá > 10GB, đòi extra confirmation.
-7. **Sacred path guard**: Refuse bất kỳ path nào match sacred list trong `CLAUDE.md` section 2 rule 4.
+1. **Git-aware**: gitignored paths (node_modules, build/) không bị block khi repo dirty — chỉ block nếu path có tracked files với uncommitted changes
+2. **Process-aware**: lsof (Unix) / Get-Process (Win) — SKIP nếu có process đang hold
+3. **Recency guard**: modified < 30 ngày → SKIP (configurable)
+4. **Symlink guard**: không follow symlinks ra ngoài project root
+5. **Size sanity**: > 10GB đòi extra confirmation
+6. **Sacred path guard**: ~/.ssh, ~/.aws, ~/.kube, ~/.git, v.v. — absolute block
 
 ### Undo Support
 
-Default: move to OS Trash (Windows Recycle Bin, macOS ~/.Trash, Linux XDG trash). `shed undo` liệt kê last N operations với option restore.
-
-`--hard-delete` flag bypasses Trash (for CI or full wipe scenarios).
+Default: move to OS Trash. `shed undo` liệt kê + restore. `--hard-delete` bypasses Trash.
 
 ---
 
-## Phased Roadmap
+## Roadmap
 
-Total timeline: **14-16 tuần** tới public launch. Closed beta bắt đầu sau Phase 3.
-
-### Phase 0 — Foundation (Week 1-2)
-
-**Goal**: Tooling + safety framework skeleton + CI matrix.
+### ✅ Phase 0 — Foundation
 
 - [x] Monorepo setup (pnpm, tsconfig, biome)
-- [ ] CI: GitHub Actions matrix (macOS/Ubuntu/Windows) chạy typecheck + test + lint
-- [ ] `SafetyChecker` class với unit tests (git-aware, process-aware, path validation)
-- [ ] `RiskTier` enum + classification helpers
-- [ ] Platform abstraction layer (`core/src/platform/{darwin,linux,win32}.ts`)
-- [ ] Logger setup (`pino`)
-- [ ] Error taxonomy (`core/src/errors.ts`)
-- [ ] Test fixture framework (`memfs` + git repo fixtures)
+- [x] CI: GitHub Actions matrix (macOS/Ubuntu/Windows)
+- [x] `SafetyChecker` với full unit tests (git-aware, process-aware, sacred paths, symlinks)
+- [x] `RiskTier` enum + tier policies
+- [x] Platform abstraction layer
+- [x] Logger (pino), error taxonomy, test fixture framework
 
-**Exit criteria**: Có thể scan 1 folder, classify risk, NOT actually delete anything, trên cả 3 OS.
+### ✅ Phase 1 — Core Detectors
 
-### Phase 1 — MVP Detectors (Week 3-5)
+- [x] Node.js (node_modules, global caches, workspace root detection)
+- [x] Python (venv, __pycache__, pip/poetry/uv cache)
+- [x] Rust (target/, cargo registry cache)
+- [x] Docker (dangling images, stopped containers, build cache)
 
-**Goal**: Cover web development core runtimes.
+### ✅ Phase 2 — CLI
 
-Detectors theo thứ tự ưu tiên:
-1. Node.js (`package.json`, `node_modules`, caches)
-2. Python (`venv`, `__pycache__`, pip cache, poetry cache)
-3. Rust (`target/`, cargo registry cache)
-4. Docker (dangling images, stopped containers, build cache)
-5. Global package manager caches (npm, yarn, pnpm, bun, pip, cargo, brew)
+- [x] `shed scan` — list + risk classification
+- [x] `shed clean` — interactive với quick-select preset (All/Green/Yellow/Custom)
+- [x] `shed undo` — restore from trash
+- [x] `shed doctor` — environment check
+- [x] `shed config` — user preferences
+- [x] `--verbose`, dry-run default, `--execute` flag
+- [x] ASCII logo + author info
+- [x] npm publish via CI/CD (OIDC Trusted Publisher)
 
-Mỗi detector:
-- Implement `ProjectDetector` interface
-- Unit tests với fixtures
-- Risk tier assignments được document
-- Safety checks integrated
+### ✅ Phase 3 — Mobile + System Detectors
 
-**Exit criteria**: `shed scan ~` hoạt động trên cả 3 OS, tìm ra projects với accurate sizing, zero false positives trong sacred paths.
+- [x] Flutter (build/, .dart_tool/, FVM caches)
+- [x] Xcode (DerivedData, caches — NOT Simulators by default)
+- [x] Android (Gradle caches, .gradle/)
+- [x] CocoaPods (~/.cocoapods repos, Pods/ per-project)
+- [x] IDE caches (JetBrains, VSCode workspaceStorage)
 
-### Phase 2 — CLI Polish (Week 6-7)
+### ✅ Phase 4 — AI Integration
 
-**Goal**: Production-quality CLI UX.
+- [x] MCP server: 4 tools (scan_projects, analyze_project, estimate_cleanup, execute_cleanup_plan)
+- [x] AI providers: Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, Ollama
+- [x] Privacy prompt trước mọi API call
+- [x] Token budget (50k default, hard stop 100k)
+- [x] API key management via keytar
 
-- `shed scan` — liệt kê + phân loại risk
-- `shed clean` — interactive cleanup với @clack/prompts
-- `shed undo` — restore from trash
-- `shed doctor` — kiểm tra environment
-- `shed config` — user preferences
-- JSON output mode (`--json`) cho scripting
-- Progress bars cho long operations
-- Logging tới `~/.shed/logs/`
-- Help text + man pages
+### ✅ Phase 5 — Open Source Launch
 
-**Exit criteria**: Một người lạ có thể install và dùng mà không đọc docs; zero confusion trong flows cơ bản.
-
-### Phase 3 — Mobile + System Detectors (Week 8-10)
-
-**Goal**: Cover mobile dev và system-level artifacts.
-
-Detectors:
-6. Flutter (`build/`, `.dart_tool/`, FVM caches, pubspec lock handling)
-7. Xcode (DerivedData với "last opened" check, caches — **NOT** Simulators by default)
-8. Android (Gradle caches, `.gradle/`, Android SDK cleanup — keep latest build-tools)
-9. CocoaPods (~/.cocoapods per-project checks)
-10. IDE caches (JetBrains, VSCode workspaceStorage — với age threshold)
-11. Browser dev tool caches
-12. Java/Maven/Gradle shared caches
-
-**Exit criteria**: Feature parity với dev-cleaner, nhưng an toàn hơn nhờ safety checks. Đây là điểm kick off **Closed Beta**.
-
-### Phase 4 — AI Integration (Week 11-13)
-
-**Parallel tracks — cả hai approach Mạnh đã chọn:**
-
-**Track A: MCP Server**
-- Implement MCP protocol
-- Tools: `scan_projects`, `analyze_project`, `estimate_cleanup`, `execute_cleanup_plan`
-- Distribution: một binary standalone `@lxmanh/shed-mcp-server`
-- Setup guide cho Claude Desktop + Claude Code
-- E2E test với mock MCP client
-
-**Track B: Built-in AI**
-- Provider abstraction: Anthropic, OpenAI, Ollama
-- `shed scan --explain-with-ai` — AI giải thích từng item
-- `shed ask "find old Python projects I can delete"` — natural language query
-- API key management qua `keytar`
-- Privacy prompts trước mọi API call
-- Token budget tracking
-
-**Exit criteria**: Claude Desktop user có thể chat `"help me free up 20GB safely"` và tool hoạt động; CLI user có thể dùng AI mode mà không hiểu MCP.
-
-### Phase 5 — Closed Beta (Week 11-14, parallel với Phase 4)
-
-Song song với Phase 4, start closed beta:
-- Invite 15-25 trusted developer contacts
-- Private Discord/Telegram cho feedback
-- Weekly release cycle
-- Public bug tracker (private repo)
-- Iterate trên UX dựa trên feedback
-- Accumulate testimonials cho public launch
-
-### Phase 6 — Public Launch (Week 15-16)
-
-- [ ] Flip GitHub repo public
-- [ ] Homebrew tap setup (`brew tap lexmanh/shed`) — GitHub repo URL, giữ nguyên `lexmanh`
-- [ ] Scoop manifest cho Windows
-- [ ] npm publish stable
-- [ ] Landing page trên GitHub Pages với demo GIF
-- [ ] Blog post comparing với dev-cleaner, npkill, kondo
-- [ ] Submit: Hacker News, Reddit (r/programming, r/node, r/macapps), Product Hunt
-- [ ] Vietnamese community: Daynhauhoc, J2team, Facebook groups
-- [ ] Tweet thread từ Manh
-- [ ] `llms.txt` cho AI crawlers
-
-**Target**: 500+ GitHub stars trong tháng đầu, 50+ beta feedback iterations.
+- [x] Branch protection (CI required trước khi merge)
+- [x] Issue templates (bug, feature request, safety concern)
+- [x] PR template với safety checklist
+- [x] CONTRIBUTING.md
+- [x] Flip repo public
+- [x] v0.1.0-beta.2 published to npm
 
 ---
 
-## Tech Stack (pinned decisions)
+## Backlog — Tính năng dự kiến
 
-- **Runtime**: Node 22 LTS minimum
-- **Language**: TypeScript 5.7+, strict mode
-- **Monorepo**: pnpm workspaces (simpler hơn Turborepo cho scale này)
-- **Build**: tsup (based on esbuild)
+### v0.2 — Distribution & Adoption
+
+- [ ] Homebrew tap (`brew install lexmanh/shed/shed`)
+- [ ] Scoop manifest cho Windows
+- [ ] `shed scan --json` output hoàn chỉnh
+- [ ] Shell completions (bash/zsh/fish/powershell)
+- [ ] Landing page + demo GIF trên GitHub Pages
+- [ ] `llms.txt` cho AI crawlers
+- [ ] Submit: HN, Reddit, Product Hunt, Vietnamese communities
+
+### v0.3 — More Detectors
+
+- [ ] Go (`$GOPATH/pkg/mod` — thường vài GB)
+- [ ] Java / Maven (`~/.m2/repository`)
+- [ ] Gradle shared cache (`~/.gradle/caches`)
+- [ ] Ruby / Bundler (`vendor/bundle`, `~/.bundle`)
+- [ ] .NET / NuGet (`~/.nuget/packages`)
+- [ ] Bun cache (`~/.bun/install/cache`)
+- [ ] Browser dev tool caches (Chrome, Firefox)
+
+### v0.4 — UX & Power Features
+
+- [ ] `shed scan` interactive mode (filter/sort/search)
+- [ ] `shed stats` — lịch sử freed disk space theo thời gian
+- [ ] `shed schedule` — tự động cleanup định kỳ
+- [ ] `--since <date>` flag — chỉ xét items không dùng từ ngày X
+- [ ] `shed ask "<query>"` — natural language cleanup query via AI
+
+### v1.0 — Stable
+
+- [ ] npm publish stable (bỏ beta dist-tag)
+- [ ] Windows long path testing thực tế (`\\?\` prefix)
+- [ ] E2E test suite đầy đủ
+- [ ] 80%+ test coverage overall, 100% safety-critical
+- [ ] docs/architecture.md, docs/detector-plugin-guide.md
+
+---
+
+## Tech Stack
+
+- **Runtime**: Node 22 LTS
+- **Language**: TypeScript 5.7+ strict
+- **Monorepo**: pnpm workspaces
+- **Build**: tsup
 - **Test**: vitest + @vitest/coverage-v8
-- **Lint/format**: biome (đủ tốt, nhanh hơn ESLint+Prettier)
-- **CLI framework**: commander + @clack/prompts
+- **Lint/format**: biome
+- **CLI**: commander + @clack/prompts
 - **Filesystem**: fast-glob, node:fs/promises
 - **Subprocess**: execa
 - **Logger**: pino
 - **Secret storage**: keytar
 - **User config**: conf
 - **Trash**: trash (cross-platform)
-- **AI SDK**: @anthropic-ai/sdk, openai, ollama (via fetch)
+- **AI SDKs**: @anthropic-ai/sdk, openai, @google/genai
 - **MCP**: @modelcontextprotocol/sdk
 
 ---
 
-## Non-Goals (explicit)
+## Non-Goals
 
-Để tránh scope creep, những thứ sau **KHÔNG** thuộc Shed:
-
-- GUI application (consider sau v1.0)
+- GUI application
 - Real-time monitoring / background daemon
 - Cloud storage cleanup (S3, Dropbox, iCloud)
 - Email/photo library cleanup
 - Malware scanning
 - System optimization ngoài disk space
-- Uninstaller cho apps (CleanMyMac territory)
+- Uninstaller cho apps
 
 ---
 
 ## Success Metrics
 
 **Technical:**
-- Safety bug rate: 0 data-loss incidents trong beta
+- Safety bug rate: 0 data-loss incidents
 - Test coverage: > 80% overall, 100% safety-critical
 - CI: xanh trên cả 3 OS
 - Cold startup: < 200ms
 
-**Community (post-launch):**
+**Community:**
 - 500+ GitHub stars trong 30 ngày đầu
 - 10+ external contributors
-- 50+ GitHub Discussions threads
 - Mention trong ít nhất 3 dev newsletters
 
 **User value:**
-- Average disk space freed per user: > 10GB
-- User-reported "broke my project" rate: < 0.1%
+- Average disk freed per user: > 10GB
+- "broke my project" rate: < 0.1%
 
 ---
 
-## Risks & Mitigations
+## Open Questions
 
-| Risk | Probability | Mitigation |
-|---|---|---|
-| Safety bug destroys user data | Low (nhờ tiered system) | Test coverage, beta period, Trash default |
-| Cross-platform fragmentation | Medium | CI matrix, platform abstraction layer |
-| AI costs spiral | Medium | Token budget, Ollama fallback, opt-in |
-| Feature creep trước launch | High | Non-goals list, strict phase gates |
-| Burnout (solo maintainer) | Medium | Closed beta gives feedback loop, Phase 6 planned for community contrib |
-
----
-
-## Open Questions (decide during Phase 0-1)
-
-1. ~~Tên npm package scope~~ — **Đã quyết định:** `@lxmanh/shed-*` (npm username `lxmanh`, personal scope, free).
-2. License: MIT (max adoption) vs Apache 2.0 (patent protection)?
-3. Đã có domain `shed.dev`? Check availability.
-4. Beta tester recruiting: team cũ? Twitter? Vietnamese dev community?
-
-Các quyết định này có thể defer đến cuối Phase 1.
+1. License: MIT (đang dùng) vs Apache 2.0 (patent protection)?
+2. Domain `shed.dev` — check availability nếu muốn landing page riêng
