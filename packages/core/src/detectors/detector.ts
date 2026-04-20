@@ -9,6 +9,8 @@
  * and subprocess calls. All destructive operations go through SafetyChecker.
  */
 
+import { stat } from 'node:fs/promises';
+import { execa } from 'execa';
 import type { CleanableItem, DetectedProject } from '../types.js';
 
 export interface DetectorContext {
@@ -61,20 +63,58 @@ export abstract class BaseDetector implements ProjectDetector {
     return [];
   }
 
-  /**
-   * Compute directory size in bytes.
-   * Uses `du` on Unix, native recursion on Windows.
-   *
-   * TODO: implement efficiently — this is called frequently.
-   */
-  protected async computeSize(_path: string): Promise<number> {
-    return 0; // stub
+  protected async computeSize(path: string): Promise<number> {
+    if (process.platform === 'win32') {
+      return this.computeSizeRecursive(path);
+    }
+    try {
+      const { stdout } = await execa('du', ['-sk', path], { reject: false, timeout: 10000 });
+      const kb = Number.parseInt(stdout.split('\t')[0] ?? '0', 10);
+      return Number.isNaN(kb) ? 0 : kb * 1024;
+    } catch {
+      return 0;
+    }
   }
 
-  /**
-   * Get last-modified timestamp of the most recently changed file in a directory.
-   */
-  protected async getLastModified(_path: string): Promise<number> {
-    return Date.now(); // stub
+  private async computeSizeRecursive(path: string): Promise<number> {
+    const { readdir } = await import('node:fs/promises');
+    try {
+      const entries = await readdir(path, { withFileTypes: true });
+      let total = 0;
+      for (const e of entries) {
+        const child = `${path}/${e.name}`;
+        if (e.isDirectory()) {
+          total += await this.computeSizeRecursive(child);
+        } else {
+          try {
+            const s = await stat(child);
+            total += s.size;
+          } catch {
+            /* skip */
+          }
+        }
+      }
+      return total;
+    } catch {
+      return 0;
+    }
+  }
+
+  protected async getLastModified(path: string): Promise<number> {
+    try {
+      const s = await stat(path);
+      return s.mtimeMs;
+    } catch {
+      return Date.now();
+    }
+  }
+
+  protected async dirExists(path: string): Promise<boolean> {
+    try {
+      await stat(path);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }
