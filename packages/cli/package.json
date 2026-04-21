@@ -7,6 +7,10 @@
     "shed": "./dist/cli.js"
   },
   "files": ["dist", "package.json"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lexmanh/shed.git"
+  },
   "publishConfig": {
     "access": "public"
   },
