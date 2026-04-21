@@ -7,9 +7,7 @@
     "shed-mcp": "dist/server.js"
   },
   "main": "./dist/server.js",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup src/server.ts --format esm --clean",
     "dev": "tsup src/server.ts --format esm --watch",
