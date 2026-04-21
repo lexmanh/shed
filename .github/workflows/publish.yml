@@ -49,9 +49,6 @@ jobs:
           else
             DIST_TAG="latest"
           fi
-          echo "npm version: $(npm --version)"
+          echo "npm: $(npm --version), pnpm: $(pnpm --version)"
           echo "Publishing with dist-tag: $DIST_TAG"
-          for pkg in packages/core packages/cli packages/agent packages/mcp-server; do
-            echo "--- Publishing $pkg ---"
-            (cd "$pkg" && npm publish --access public --tag "$DIST_TAG")
-          done
+          pnpm -r publish --provenance --no-git-checks --tag "$DIST_TAG"
