@@ -43,3 +43,6 @@ desktop.ini
 # Private / internal docs (never commit)
 docs/INTERNAL_STRATEGY.md
 .private/
+
+# Claude Code — per-developer settings (never commit)
+.claude/settings.local.json
