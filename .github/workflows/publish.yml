@@ -24,11 +24,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          # No registry-url here — setup-node would write NODE_AUTH_TOKEN into .npmrc,
-          # which blocks OIDC auth. We configure the registry manually instead.
-
-      - name: Configure npm registry
-        run: npm config set registry https://registry.npmjs.org/
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
