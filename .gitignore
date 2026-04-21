@@ -39,3 +39,7 @@ desktop.ini
 *.swp
 *.bak
 .tmp/
+
+# Private / internal docs (never commit)
+docs/INTERNAL_STRATEGY.md
+.private/
