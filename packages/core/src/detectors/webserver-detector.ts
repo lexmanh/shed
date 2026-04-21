@@ -7,6 +7,8 @@ import { BaseDetector, type DetectorContext } from './detector.js';
 export interface WebserverDetectorOptions {
   /** Override filesystem root for testability (default: '/') */
   readonly rootDir?: string;
+  /** Override platform detection for testability */
+  readonly platform?: NodeJS.Platform;
 }
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
@@ -16,10 +18,12 @@ export class WebserverDetector extends BaseDetector {
   readonly displayName = 'Web Server';
 
   private readonly rootDir: string;
+  private readonly platform: NodeJS.Platform;
 
   constructor(opts: WebserverDetectorOptions = {}) {
     super();
     this.rootDir = opts.rootDir ?? '/';
+    this.platform = opts.platform ?? process.platform;
   }
 
   async quickProbe(_dir: string): Promise<boolean> {
@@ -31,7 +35,7 @@ export class WebserverDetector extends BaseDetector {
   }
 
   override async scanGlobal(_ctx: DetectorContext): Promise<readonly CleanableItem[]> {
-    if (process.platform === 'win32') return [];
+    if (this.platform === 'win32') return [];
     const results = await Promise.all([
       this.checkLogDir(join(this.rootDir, 'var/log/nginx'), 'nginx'),
       this.checkLogDir(join(this.rootDir, 'var/log/apache2'), 'apache2'),

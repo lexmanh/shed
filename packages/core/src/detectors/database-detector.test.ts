@@ -30,7 +30,9 @@ describe('DatabaseDetector.scanGlobal — MySQL binary logs', () => {
       'var/lib/mysql/mysql-bin.index': '',
     });
     try {
-      const items = await new DatabaseDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new DatabaseDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
       const mysql = items.find((i) => i.metadata?.kind === 'mysql-binlogs');
       expect(mysql).toBeDefined();
       expect(mysql?.risk).toBe(RiskTier.Red);
@@ -45,7 +47,9 @@ describe('DatabaseDetector.scanGlobal — MySQL binary logs', () => {
   it('skips when no mysql-bin.* files exist', async () => {
     const fix = await createFixture({ 'var/lib/mysql/ibdata1': '' });
     try {
-      const items = await new DatabaseDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new DatabaseDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
       expect(items.find((i) => i.metadata?.kind === 'mysql-binlogs')).toBeUndefined();
     } finally {
       await fix.rm();
@@ -55,7 +59,9 @@ describe('DatabaseDetector.scanGlobal — MySQL binary logs', () => {
   it('skips when /var/lib/mysql is absent', async () => {
     const fix = await createFixture({});
     try {
-      const items = await new DatabaseDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new DatabaseDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
       expect(items.find((i) => i.metadata?.kind === 'mysql-binlogs')).toBeUndefined();
     } finally {
       await fix.rm();
@@ -71,7 +77,9 @@ describe('DatabaseDetector.scanGlobal — PostgreSQL WAL', () => {
       'var/lib/postgresql/14/main/pg_wal/000000010000000000000001': '',
     });
     try {
-      const items = await new DatabaseDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new DatabaseDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
       const pgwal = items.find((i) => i.metadata?.kind === 'postgresql-wal');
       expect(pgwal).toBeDefined();
       expect(pgwal?.risk).toBe(RiskTier.Red);
@@ -84,7 +92,9 @@ describe('DatabaseDetector.scanGlobal — PostgreSQL WAL', () => {
   it('skips when pg_wal is absent', async () => {
     const fix = await createFixture({ 'var/lib/postgresql/14/main/global/pg_control': '' });
     try {
-      const items = await new DatabaseDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new DatabaseDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
       expect(items.find((i) => i.metadata?.kind === 'postgresql-wal')).toBeUndefined();
     } finally {
       await fix.rm();
@@ -100,7 +110,9 @@ describe('DatabaseDetector.scanGlobal — MongoDB diagnostic', () => {
       'var/lib/mongodb/diagnostic.data/metrics.2024-01-01T00-00-00Z-00000': '',
     });
     try {
-      const items = await new DatabaseDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new DatabaseDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
       const mongo = items.find((i) => i.metadata?.kind === 'mongodb-diagnostic');
       expect(mongo).toBeDefined();
       expect(mongo?.risk).toBe(RiskTier.Red);
@@ -113,7 +125,9 @@ describe('DatabaseDetector.scanGlobal — MongoDB diagnostic', () => {
   it('skips when diagnostic.data is absent', async () => {
     const fix = await createFixture({ 'var/lib/mongodb/mongod.lock': '' });
     try {
-      const items = await new DatabaseDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new DatabaseDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
       expect(items.find((i) => i.metadata?.kind === 'mongodb-diagnostic')).toBeUndefined();
     } finally {
       await fix.rm();

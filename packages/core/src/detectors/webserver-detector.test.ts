@@ -52,7 +52,10 @@ describe('WebserverDetector.scanGlobal — nginx', () => {
       await utimes(gz1, THIRTY_ONE_DAYS_AGO, THIRTY_ONE_DAYS_AGO);
       await utimes(gz2, THIRTY_ONE_DAYS_AGO, THIRTY_ONE_DAYS_AGO);
 
-      const items = await new WebserverDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new WebserverDetector({
+        rootDir: fix.path,
+        platform: 'linux',
+      }).scanGlobal(ctx);
       const nginxItems = items.filter((i) => i.metadata?.server === 'nginx');
       expect(nginxItems).toHaveLength(2);
       for (const item of nginxItems) {
@@ -72,7 +75,10 @@ describe('WebserverDetector.scanGlobal — nginx', () => {
       const gz = join(fix.path, 'var/log/nginx/access.log.1.gz');
       await utimes(gz, THIRTY_ONE_DAYS_AGO, THIRTY_ONE_DAYS_AGO);
 
-      const items = await new WebserverDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new WebserverDetector({
+        rootDir: fix.path,
+        platform: 'linux',
+      }).scanGlobal(ctx);
       const item = items.find((i) => i.metadata?.server === 'nginx');
       expect(item?.path).toBe(gz);
       // must NOT be the parent directory
@@ -88,7 +94,10 @@ describe('WebserverDetector.scanGlobal — nginx', () => {
       const gz = join(fix.path, 'var/log/nginx/access.log.1.gz');
       await utimes(gz, ONE_DAY_AGO, ONE_DAY_AGO);
 
-      const items = await new WebserverDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new WebserverDetector({
+        rootDir: fix.path,
+        platform: 'linux',
+      }).scanGlobal(ctx);
       expect(items.filter((i) => i.metadata?.server === 'nginx')).toHaveLength(0);
     } finally {
       await fix.rm();
@@ -101,7 +110,10 @@ describe('WebserverDetector.scanGlobal — nginx', () => {
       'var/log/nginx/error.log': '',
     });
     try {
-      const items = await new WebserverDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new WebserverDetector({
+        rootDir: fix.path,
+        platform: 'linux',
+      }).scanGlobal(ctx);
       expect(items.filter((i) => i.metadata?.server === 'nginx')).toHaveLength(0);
     } finally {
       await fix.rm();
@@ -111,7 +123,10 @@ describe('WebserverDetector.scanGlobal — nginx', () => {
   it('returns empty when nginx log dir does not exist', async () => {
     const fix = await createFixture({});
     try {
-      const items = await new WebserverDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new WebserverDetector({
+        rootDir: fix.path,
+        platform: 'linux',
+      }).scanGlobal(ctx);
       expect(items.filter((i) => i.metadata?.server === 'nginx')).toHaveLength(0);
     } finally {
       await fix.rm();
@@ -128,7 +143,10 @@ describe('WebserverDetector.scanGlobal — apache2', () => {
       const gz = join(fix.path, 'var/log/apache2/access.log.1.gz');
       await utimes(gz, THIRTY_ONE_DAYS_AGO, THIRTY_ONE_DAYS_AGO);
 
-      const items = await new WebserverDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new WebserverDetector({
+        rootDir: fix.path,
+        platform: 'linux',
+      }).scanGlobal(ctx);
       const apache = items.find((i) => i.metadata?.server === 'apache2');
       expect(apache).toBeDefined();
       expect(apache?.risk).toBe(RiskTier.Green);
@@ -148,7 +166,10 @@ describe('WebserverDetector.scanGlobal — httpd', () => {
       const gz = join(fix.path, 'var/log/httpd/access_log.1.gz');
       await utimes(gz, THIRTY_ONE_DAYS_AGO, THIRTY_ONE_DAYS_AGO);
 
-      const items = await new WebserverDetector({ rootDir: fix.path }).scanGlobal(ctx);
+      const items = await new WebserverDetector({
+        rootDir: fix.path,
+        platform: 'linux',
+      }).scanGlobal(ctx);
       const httpd = items.find((i) => i.metadata?.server === 'httpd');
       expect(httpd).toBeDefined();
       expect(httpd?.risk).toBe(RiskTier.Green);

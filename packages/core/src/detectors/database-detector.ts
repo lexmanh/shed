@@ -8,6 +8,8 @@ import { BaseDetector, type DetectorContext } from './detector.js';
 export interface DatabaseDetectorOptions {
   /** Override filesystem root for testability (default: '/') */
   readonly rootDir?: string;
+  /** Override platform detection for testability */
+  readonly platform?: NodeJS.Platform;
 }
 
 export class DatabaseDetector extends BaseDetector {
@@ -15,10 +17,12 @@ export class DatabaseDetector extends BaseDetector {
   readonly displayName = 'Database';
 
   private readonly rootDir: string;
+  private readonly platform: NodeJS.Platform;
 
   constructor(opts: DatabaseDetectorOptions = {}) {
     super();
     this.rootDir = opts.rootDir ?? '/';
+    this.platform = opts.platform ?? process.platform;
   }
 
   async quickProbe(_dir: string): Promise<boolean> {
@@ -30,7 +34,7 @@ export class DatabaseDetector extends BaseDetector {
   }
 
   override async scanGlobal(_ctx: DetectorContext): Promise<readonly CleanableItem[]> {
-    if (process.platform === 'win32') return [];
+    if (this.platform === 'win32') return [];
     const results = await Promise.all([
       this.checkMysqlBinlogs(),
       this.checkPostgresWal(),
