@@ -52,3 +52,11 @@ jobs:
           echo "npm: $(npm --version), pnpm: $(pnpm --version)"
           echo "Publishing with dist-tag: $DIST_TAG"
           pnpm -r publish --provenance --no-git-checks --tag "$DIST_TAG"
+
+      - name: Move latest tag to newest version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Moving latest tag to $VERSION"
+          for pkg in shed-core shed-cli shed-agent shed-mcp-server; do
+            npm dist-tag add "@lexmanh/$pkg@$VERSION" latest
+          done
