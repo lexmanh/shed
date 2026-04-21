@@ -1,5 +1,5 @@
 /**
- * @lxmanh/shed-core
+ * @lexmanh/shed-core
  *
  * Public API for the Shed core library.
  * This package contains pure logic — no user I/O.

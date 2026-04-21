@@ -3,7 +3,7 @@
  * Shed CLI entry point.
  *
  * This file is thin — it parses args and delegates to commands.
- * Commands delegate to @lxmanh/shed-core.
+ * Commands delegate to @lexmanh/shed-core.
  * Never call fs.rm or rimraf here (CLAUDE.md rule 1).
  */
 

@@ -35,7 +35,7 @@ importers:
       '@google/genai':
         specifier: ^1.50.1
         version: 1.50.1(@modelcontextprotocol/sdk@1.29.0(zod@4.3.6))
-      '@lxmanh/shed-core':
+      '@lexmanh/shed-core':
         specifier: workspace:*
         version: link:../core
       execa:
@@ -66,7 +66,7 @@ importers:
       '@clack/prompts':
         specifier: ^0.8.2
         version: 0.8.2
-      '@lxmanh/shed-core':
+      '@lexmanh/shed-core':
         specifier: workspace:*
         version: link:../core
       commander:
@@ -131,10 +131,10 @@ importers:
 
   packages/mcp-server:
     dependencies:
-      '@lxmanh/shed-agent':
+      '@lexmanh/shed-agent':
         specifier: workspace:^
         version: link:../agent
-      '@lxmanh/shed-core':
+      '@lexmanh/shed-core':
         specifier: workspace:^
         version: link:../core
       '@modelcontextprotocol/sdk':

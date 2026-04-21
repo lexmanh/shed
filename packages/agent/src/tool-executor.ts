@@ -15,8 +15,8 @@ import {
   SafetyChecker,
   Scanner,
   XcodeDetector,
-} from '@lxmanh/shed-core';
-import type { CleanableItem } from '@lxmanh/shed-core';
+} from '@lexmanh/shed-core';
+import type { CleanableItem } from '@lexmanh/shed-core';
 import { execa } from 'execa';
 
 function makeScanner(): Scanner {

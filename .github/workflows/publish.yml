@@ -30,7 +30,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build core + agent (needed for typecheck of dependent packages)
-        run: pnpm --filter @lxmanh/shed-core --filter @lxmanh/shed-agent build
+        run: pnpm --filter @lexmanh/shed-core --filter @lexmanh/shed-agent build
 
       - name: Typecheck
         run: pnpm typecheck

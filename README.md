@@ -3,7 +3,7 @@
 > Reclaim disk space from dev caches — without breaking active work.
 
 [![CI](https://github.com/lexmanh/shed/actions/workflows/ci.yml/badge.svg)](https://github.com/lexmanh/shed/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@lxmanh/shed-cli/beta)](https://www.npmjs.com/package/@lxmanh/shed-cli)
+[![npm](https://img.shields.io/npm/v/@lexmanh/shed-cli/beta)](https://www.npmjs.com/package/@lexmanh/shed-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Every developer accumulates gigabytes of forgotten `node_modules`, stale Docker images, Xcode DerivedData, Flutter build artifacts, and abandoned project caches. Existing tools either clean too aggressively (breaking active work) or too narrowly (one runtime only).
@@ -28,7 +28,7 @@ Every developer accumulates gigabytes of forgotten `node_modules`, stale Docker 
 ## Install
 
 ```bash
-npm install -g @lxmanh/shed-cli@beta
+npm install -g @lexmanh/shed-cli@beta
 ```
 
 Requires Node 22+.
@@ -95,7 +95,7 @@ Every item is classified into one of three tiers before anything is touched:
 Shed ships an MCP server that lets Claude scan and analyze your disk usage via natural language.
 
 ```bash
-npm install -g @lxmanh/shed-mcp-server@beta
+npm install -g @lexmanh/shed-mcp-server@beta
 ```
 
 Add to `claude_desktop_config.json`:
@@ -120,10 +120,10 @@ Available tools: `list_projects`, `analyze_project`, `estimate_cleanup`, `get_di
 
 | Package | Description |
 |---------|-------------|
-| [`@lxmanh/shed-cli`](https://www.npmjs.com/package/@lxmanh/shed-cli) | The `shed` binary |
-| [`@lxmanh/shed-core`](https://www.npmjs.com/package/@lxmanh/shed-core) | Detection, safety checks, risk classification |
-| [`@lxmanh/shed-agent`](https://www.npmjs.com/package/@lxmanh/shed-agent) | AI provider abstraction (Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, Ollama) |
-| [`@lxmanh/shed-mcp-server`](https://www.npmjs.com/package/@lxmanh/shed-mcp-server) | MCP server for Claude Desktop/Code |
+| [`@lexmanh/shed-cli`](https://www.npmjs.com/package/@lexmanh/shed-cli) | The `shed` binary |
+| [`@lexmanh/shed-core`](https://www.npmjs.com/package/@lexmanh/shed-core) | Detection, safety checks, risk classification |
+| [`@lexmanh/shed-agent`](https://www.npmjs.com/package/@lexmanh/shed-agent) | AI provider abstraction (Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, Ollama) |
+| [`@lexmanh/shed-mcp-server`](https://www.npmjs.com/package/@lexmanh/shed-mcp-server) | MCP server for Claude Desktop/Code |
 
 ## Beta
 

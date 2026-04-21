@@ -35,7 +35,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build core + agent (needed for typecheck of dependent packages)
-        run: pnpm --filter @lxmanh/shed-core --filter @lxmanh/shed-agent build
+        run: pnpm --filter @lexmanh/shed-core --filter @lexmanh/shed-agent build
 
       - name: Typecheck
         run: pnpm typecheck
@@ -80,7 +80,7 @@ jobs:
             echo ""
             echo "❌  Destructive syscall found outside SafetyChecker!"
             echo "    All destructive operations must go through"
-            echo "    @lxmanh/shed-core SafetyChecker.execute()."
+            echo "    @lexmanh/shed-core SafetyChecker.execute()."
             echo "    See CLAUDE.md rule 1."
             exit 1
           fi

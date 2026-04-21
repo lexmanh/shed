@@ -10,7 +10,7 @@
  * Token budget: warn at 40k, hard stop at 100k (CLAUDE.md rule 8.4).
  */
 
-import type { CleanableItem } from '@lxmanh/shed-core';
+import type { CleanableItem } from '@lexmanh/shed-core';
 import type { AIMessage, AIProvider, PrivacyPreview } from './provider.js';
 import { executeToolCall } from './tool-executor.js';
 import { ALL_TOOLS } from './tools.js';

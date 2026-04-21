@@ -22,11 +22,11 @@
 Monorepo (`pnpm` workspaces):
 
 ```
-@lxmanh/shed-core          — scan, detect, classify, safety checks
-@lxmanh/shed-cli           — `shed` binary
-@lxmanh/shed-agent         — AI provider abstraction
-@lxmanh/shed-mcp-server    — MCP for Claude Desktop/Code
-@lxmanh/shed-fleet         — SSH fleet management (Phase 7, planned)
+@lexmanh/shed-core          — scan, detect, classify, safety checks
+@lexmanh/shed-cli           — `shed` binary
+@lexmanh/shed-agent         — AI provider abstraction
+@lexmanh/shed-mcp-server    — MCP for Claude Desktop/Code
+@lexmanh/shed-fleet         — SSH fleet management (Phase 7, planned)
 ```
 
 Dependency direction: `cli`, `agent`, `mcp-server`, `fleet` → `core` (one-way only).
@@ -153,7 +153,7 @@ Phases là milestone-based, không có deadline cứng. Fit hobby pace.
 
 *Trigger: khi Phase 6 dogfood ổn định + có video demo.*
 
-- [ ] New package `@lxmanh/shed-fleet`
+- [ ] New package `@lexmanh/shed-fleet`
 - [ ] SSH transport (agentless, key-based)
 - [ ] Fleet inventory: `~/.config/shed/fleet.db` (SQLite)
 - [ ] `shed fleet add/list/remove` — quản lý server inventory
@@ -191,7 +191,7 @@ Phases là milestone-based, không có deadline cứng. Fit hobby pace.
 
 *Làm dần trong background, không block Fleet development.*
 
-- [ ] Homebrew tap (`brew install lxmanh/shed/shed`)
+- [ ] Homebrew tap (`brew install lexmanh/shed/shed`)
 - [ ] Scoop manifest cho Windows
 - [ ] Shell completions (bash/zsh/fish/powershell)
 - [ ] `shed scan --json` output hoàn chỉnh

@@ -1,5 +1,5 @@
 {
-  "name": "@lxmanh/shed-mcp-server",
+  "name": "@lexmanh/shed-mcp-server",
   "version": "0.1.0-beta.1",
   "description": "MCP server for Shed — exposes disk scan and analysis tools to Claude Desktop and Claude Code",
   "type": "module",
@@ -16,8 +16,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lxmanh/shed-agent": "workspace:^",
-    "@lxmanh/shed-core": "workspace:^",
+    "@lexmanh/shed-agent": "workspace:^",
+    "@lexmanh/shed-core": "workspace:^",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.3.6"
   },

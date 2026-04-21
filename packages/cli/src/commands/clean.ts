@@ -16,7 +16,7 @@ import {
   type SafetyReason,
   Scanner,
   XcodeDetector,
-} from '@lxmanh/shed-core';
+} from '@lexmanh/shed-core';
 import pc from 'picocolors';
 import { verbose } from '../verbose.js';
 

@@ -390,10 +390,10 @@ it('handles unicode paths', async () => {
 pnpm test
 
 # TDD mode — watch 1 file
-pnpm --filter @lxmanh/shed-core test -- --watch packages/core/src/safety/safety-checker.test.ts
+pnpm --filter @lexmanh/shed-core test -- --watch packages/core/src/safety/safety-checker.test.ts
 
 # Coverage report
-pnpm --filter @lxmanh/shed-core test -- --coverage
+pnpm --filter @lexmanh/shed-core test -- --coverage
 ```
 
 Coverage target: **100% branches** cho `safety/`, **≥ 90%** cho `detectors/`.

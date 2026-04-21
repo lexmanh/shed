@@ -183,7 +183,7 @@ export * from './go-detector.js'; // ← thêm dòng này
 File: `packages/cli/src/commands/scan.ts` (hoặc nơi Scanner được khởi tạo):
 
 ```ts
-import { GoDetector } from '@lxmanh/shed-core';
+import { GoDetector } from '@lexmanh/shed-core';
 
 const scanner = new Scanner([
   new NodeDetector(),

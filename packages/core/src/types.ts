@@ -1,5 +1,5 @@
 /**
- * Shared types for @lxmanh/shed-core.
+ * Shared types for @lexmanh/shed-core.
  */
 
 import type { RiskTier } from './safety/risk-tiers.js';

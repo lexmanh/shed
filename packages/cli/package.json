@@ -1,5 +1,5 @@
 {
-  "name": "@lxmanh/shed-cli",
+  "name": "@lexmanh/shed-cli",
   "version": "0.1.0-beta.1",
   "description": "Safe, cross-platform disk cleanup CLI for developers — reclaim space from dev caches without breaking active work",
   "type": "module",
@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",
-    "@lxmanh/shed-core": "workspace:*",
+    "@lexmanh/shed-core": "workspace:*",
     "commander": "^12.1.0",
     "conf": "^13.1.0",
     "execa": "^9.5.0",

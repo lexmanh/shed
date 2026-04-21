@@ -1,5 +1,5 @@
 /**
- * Logger factory for @lxmanh/shed-core.
+ * Logger factory for @lexmanh/shed-core.
  *
  * Rules (CLAUDE.md §4):
  *   - core, agent, mcp-server MUST use this logger — never console.log.
