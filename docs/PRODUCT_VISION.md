@@ -20,12 +20,12 @@ Shed scans dev environments and Linux servers, classifies every cleanable item b
 
 ## 2. Target Users
 
-| Persona | Primary pain | Shed value |
-|---|---|---|
-| **Developer** | `node_modules`, build caches filling up laptop | `shed scan ~/Projects` |
-| **Sysadmin / DevOps** | Many Linux servers, disk full, scattered manual cleanup | `shed fleet clean` |
-| **IT admin** | Managing dev team fleet, no consistent policy, no audit trail | `shed fleet` + policies + audit log |
-| **Claude Code / Claude Desktop user** | Wants AI-assisted disk management | MCP server |
+| Persona | Primary pain | Shed value | Status |
+|---|---|---|---|
+| **Developer** | `node_modules`, build caches filling up laptop | `shed scan ~/Projects` | ✅ Available |
+| **Sysadmin / DevOps** | Many Linux servers, disk full, scattered manual cleanup | `shed fleet clean` | 🔲 Phase 7 |
+| **IT admin** | Managing dev team fleet, no consistent policy, no audit trail | `shed fleet` + policies + audit log | 🔲 Phase 7–9 |
+| **Claude Code / Claude Desktop user** | Wants AI-assisted disk management | MCP server | ✅ Available |
 
 **Out of scope:**
 - Non-technical end users (existing GUI tools cover this)
@@ -65,6 +65,7 @@ Applies to both audiences — developers (uncommitted code) and sysadmins (produ
 - Mail servers: Postfix / Exim queue, `mail.log`
 
 ### Phase 3 — SSH Fleet
+- Homebrew tap + single binary (prerequisite: sysadmins don't have Node installed)
 - New `packages/fleet/` — agentless SSH transport
 - `shed fleet add/list/remove`, `shed fleet scan`, `shed fleet clean`, `shed fleet watch`
 - Parallel execution with concurrency limits, result aggregation, retry, timeout
