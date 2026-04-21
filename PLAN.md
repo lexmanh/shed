@@ -202,14 +202,15 @@ Phases là milestone-based, không có deadline cứng. Fit hobby pace.
 
 ## More Detectors (v0.3 scope)
 
-- [ ] Go (`$GOPATH/pkg/mod`)
-- [ ] Java / Maven (`~/.m2/repository`)
-- [ ] Gradle shared cache (`~/.gradle/caches`)
-- [ ] Ruby / Bundler (`vendor/bundle`, `~/.bundle`)
-- [ ] .NET / NuGet (`~/.nuget/packages`)
-- [ ] Bun cache (`~/.bun/install/cache`)
-- [ ] Tomcat: `catalina.out`, heap dumps `.hprof`
-- [ ] PM2: `~/.pm2/logs/`
+- [x] Go (`$GOPATH/pkg/mod`, project `vendor/`)
+- [x] Java / Maven (`~/.m2/repository`, project `target/`)
+- [x] Java / Gradle (`~/.gradle/caches`, project `build/` + `.gradle/`)
+- [x] Ruby / Bundler (`~/.bundle/cache`, project `vendor/bundle/`)
+- [x] .NET / NuGet (`~/.nuget/packages`, project `bin/` + `obj/`)
+- [x] Bun cache — handled inside NodeDetector (`~/.bun`)
+- [ ] Browser dev tool caches (Chrome, Firefox) — needs process-aware logic, skip for now
+- [ ] Tomcat: `catalina.out`, heap dumps `.hprof` — Phase 6
+- [ ] PM2: `~/.pm2/logs/` — Phase 6
 
 ---
 
