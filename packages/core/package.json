@@ -1,6 +1,6 @@
 {
   "name": "@lexmanh/shed-core",
-  "version": "0.2.0-beta.1",
+  "version": "0.2.0-beta.2",
   "description": "Disk cleanup engine for dev machines and Linux servers — git-aware, tiered safety, trash-by-default",
   "type": "module",
   "main": "./dist/index.js",
