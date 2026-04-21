@@ -138,16 +138,13 @@ Phases là milestone-based, không có deadline cứng. Fit hobby pace.
 
 ---
 
-### 🔲 Phase 6 — Docker + Linux Server Foundation
+### ✅ Phase 6 — Docker + Linux Server Foundation
 
-*Trigger: khi bắt đầu dogfood trên Linux server production.*
-
-- [ ] Docker overlay2 analyzer, orphan volumes, build cache (extend existing docker-detector)
-- [ ] System detectors: `/var/log/journal`, `/var/cache/apt`, `/var/cache/yum`, `/var/cache/dnf`
-- [ ] Old kernels in `/boot` (detect + suggest `apt autoremove`, không tự xóa)
-- [ ] Crash dumps: `/var/crash/`, `/var/core/`
-- [ ] Nginx/Apache rotated log detector (`.gz` > 30 ngày, custom paths ngoài logrotate)
-- [ ] Detect-only: MySQL binary logs, PostgreSQL WAL, MongoDB diagnostic
+- [x] Docker orphan volumes detector (Yellow, age > 30 days) — extends DockerDetector
+- [x] SystemDetector: `/var/log/journal` (Yellow), `/var/cache/apt` (Green), `/var/cache/yum` (Green), `/var/cache/dnf` (Green), crash dumps `/var/crash/` + `/var/core/` (Yellow) — Linux-only
+- [x] WebserverDetector: Nginx/Apache/httpd rotated `.gz` logs > 30 days (Green)
+- [x] DatabaseDetector: detect-only Red items for MySQL binary logs, PostgreSQL WAL, MongoDB diagnostic.data
+- [ ] Old kernels in `/boot` (detect + suggest `apt autoremove`) — deferred, needs dpkg integration
 
 ### 🔲 Phase 7 — SSH Fleet (`packages/fleet`)
 

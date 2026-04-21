@@ -12,14 +12,18 @@ describe('GoDetector.quickProbe', () => {
     const fix = await createFixture({ 'go.mod': 'module example.com/app\n\ngo 1.21\n' });
     try {
       expect(await new GoDetector().quickProbe(fix.path)).toBe(true);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns false when go.mod is absent', async () => {
     const fix = await createFixture({ 'main.go': 'package main' });
     try {
       expect(await new GoDetector().quickProbe(fix.path)).toBe(false);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -28,21 +32,27 @@ describe('GoDetector.analyze', () => {
     const fix = await createFixture({});
     try {
       expect(await new GoDetector().analyze(fix.path, ctx)).toBeNull();
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns type=go', async () => {
     const fix = await createFixture({ 'go.mod': 'module example.com/app\n\ngo 1.21\n' });
     try {
       expect((await new GoDetector().analyze(fix.path, ctx))?.type).toBe('go');
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('extracts module name', async () => {
     const fix = await createFixture({ 'go.mod': 'module github.com/user/myapp\n\ngo 1.21\n' });
     try {
       expect((await new GoDetector().analyze(fix.path, ctx))?.name).toBe('github.com/user/myapp');
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns vendor/ as Yellow when present', async () => {
@@ -52,23 +62,29 @@ describe('GoDetector.analyze', () => {
     });
     try {
       const result = await new GoDetector().analyze(fix.path, ctx);
-      const vendor = result?.items.find(i => i.path === join(fix.path, 'vendor'));
+      const vendor = result?.items.find((i) => i.path === join(fix.path, 'vendor'));
       expect(vendor?.risk).toBe(RiskTier.Yellow);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns no items when vendor absent', async () => {
     const fix = await createFixture({ 'go.mod': 'module example.com/app\n\ngo 1.21\n' });
     try {
       expect((await new GoDetector().analyze(fix.path, ctx))?.items).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('handles unicode paths', async () => {
     const fix = await createFixture({ 'go.mod': 'module example.com/phân-tích\n\ngo 1.21\n' });
     try {
       expect(await new GoDetector().analyze(fix.path, ctx)).not.toBeNull();
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -79,13 +95,17 @@ describe('GoDetector.scanGlobal', () => {
       const items = await new GoDetector({ homeDir: fix.path }).scanGlobal(ctx);
       expect(items.length).toBeGreaterThan(0);
       expect(items[0]?.risk).toBe(RiskTier.Green);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns empty when mod cache absent', async () => {
     const fix = await createFixture({});
     try {
       expect(await new GoDetector({ homeDir: fix.path }).scanGlobal(ctx)).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });

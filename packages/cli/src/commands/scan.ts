@@ -4,6 +4,7 @@ import {
   AndroidDetector,
   type CleanableItem,
   CocoaPodsDetector,
+  DatabaseDetector,
   type DetectedProject,
   DockerDetector,
   DotnetDetector,
@@ -18,6 +19,8 @@ import {
   RubyDetector,
   RustDetector,
   Scanner,
+  SystemDetector,
+  WebserverDetector,
   XcodeDetector,
 } from '@lexmanh/shed-core';
 import pc from 'picocolors';
@@ -74,6 +77,9 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
     new AndroidDetector(),
     new CocoaPodsDetector(),
     new IdeDetector(),
+    new SystemDetector(),
+    new WebserverDetector(),
+    new DatabaseDetector(),
   ]);
 
   const ctx = { scanRoot: rootDir, maxDepth: 8 };

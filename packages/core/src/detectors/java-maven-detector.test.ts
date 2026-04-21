@@ -19,14 +19,18 @@ describe('JavaMavenDetector.quickProbe', () => {
     const fix = await createFixture({ 'pom.xml': MINIMAL_POM });
     try {
       expect(await new JavaMavenDetector().quickProbe(fix.path)).toBe(true);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns false when pom.xml absent', async () => {
     const fix = await createFixture({ 'build.gradle': '' });
     try {
       expect(await new JavaMavenDetector().quickProbe(fix.path)).toBe(false);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -35,28 +39,36 @@ describe('JavaMavenDetector.analyze', () => {
     const fix = await createFixture({});
     try {
       expect(await new JavaMavenDetector().analyze(fix.path, ctx)).toBeNull();
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns null when pom.xml is not valid XML', async () => {
     const fix = await createFixture({ 'pom.xml': 'not xml at all' });
     try {
       expect(await new JavaMavenDetector().analyze(fix.path, ctx)).toBeNull();
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns type=java-maven', async () => {
     const fix = await createFixture({ 'pom.xml': MINIMAL_POM });
     try {
       expect((await new JavaMavenDetector().analyze(fix.path, ctx))?.type).toBe('java-maven');
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('extracts artifactId as name', async () => {
     const fix = await createFixture({ 'pom.xml': MINIMAL_POM });
     try {
       expect((await new JavaMavenDetector().analyze(fix.path, ctx))?.name).toBe('my-app');
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns target/ as Yellow when present', async () => {
@@ -66,16 +78,20 @@ describe('JavaMavenDetector.analyze', () => {
     });
     try {
       const result = await new JavaMavenDetector().analyze(fix.path, ctx);
-      const target = result?.items.find(i => i.path === join(fix.path, 'target'));
+      const target = result?.items.find((i) => i.path === join(fix.path, 'target'));
       expect(target?.risk).toBe(RiskTier.Yellow);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns no items when target absent', async () => {
     const fix = await createFixture({ 'pom.xml': MINIMAL_POM });
     try {
       expect((await new JavaMavenDetector().analyze(fix.path, ctx))?.items).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -86,13 +102,17 @@ describe('JavaMavenDetector.scanGlobal', () => {
       const items = await new JavaMavenDetector({ homeDir: fix.path }).scanGlobal(ctx);
       expect(items.length).toBeGreaterThan(0);
       expect(items[0]?.risk).toBe(RiskTier.Green);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns empty when .m2 absent', async () => {
     const fix = await createFixture({});
     try {
       expect(await new JavaMavenDetector({ homeDir: fix.path }).scanGlobal(ctx)).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });

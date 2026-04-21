@@ -25,7 +25,7 @@ export class DotnetDetector extends BaseDetector {
     const { readdir } = await import('node:fs/promises');
     try {
       const entries = await readdir(dir);
-      return entries.some(e => DOTNET_EXTENSIONS.has(extname(e)));
+      return entries.some((e) => DOTNET_EXTENSIONS.has(extname(e)));
     } catch {
       return false;
     }
@@ -40,13 +40,14 @@ export class DotnetDetector extends BaseDetector {
       return null;
     }
 
-    const projectFile = entries.find(e => DOTNET_EXTENSIONS.has(extname(e)));
+    const projectFile = entries.find((e) => DOTNET_EXTENSIONS.has(extname(e)));
     if (!projectFile) return null;
 
     // Use filename without extension as project name (.sln files keep full name)
-    const projectName = extname(projectFile) === '.sln'
-      ? basename(projectFile, '.sln')
-      : basename(projectFile, extname(projectFile));
+    const projectName =
+      extname(projectFile) === '.sln'
+        ? basename(projectFile, '.sln')
+        : basename(projectFile, extname(projectFile));
 
     const items: CleanableItem[] = [];
 

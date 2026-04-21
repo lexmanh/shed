@@ -1,5 +1,6 @@
 export * from './android-detector.js';
 export * from './cocoapods-detector.js';
+export * from './database-detector.js';
 export * from './detector.js';
 export * from './docker-detector.js';
 export * from './dotnet-detector.js';
@@ -12,4 +13,6 @@ export * from './node-detector.js';
 export * from './python-detector.js';
 export * from './ruby-detector.js';
 export * from './rust-detector.js';
+export * from './system-detector.js';
+export * from './webserver-detector.js';
 export * from './xcode-detector.js';

@@ -12,28 +12,36 @@ describe('JavaGradleDetector.quickProbe', () => {
     const fix = await createFixture({ 'build.gradle': 'plugins { id "java" }' });
     try {
       expect(await new JavaGradleDetector().quickProbe(fix.path)).toBe(true);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns true when build.gradle.kts exists', async () => {
     const fix = await createFixture({ 'build.gradle.kts': 'plugins { java }' });
     try {
       expect(await new JavaGradleDetector().quickProbe(fix.path)).toBe(true);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns true when settings.gradle exists', async () => {
     const fix = await createFixture({ 'settings.gradle': 'rootProject.name = "app"' });
     try {
       expect(await new JavaGradleDetector().quickProbe(fix.path)).toBe(true);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns false when no Gradle files exist', async () => {
     const fix = await createFixture({ 'pom.xml': '' });
     try {
       expect(await new JavaGradleDetector().quickProbe(fix.path)).toBe(false);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -42,14 +50,18 @@ describe('JavaGradleDetector.analyze', () => {
     const fix = await createFixture({});
     try {
       expect(await new JavaGradleDetector().analyze(fix.path, ctx)).toBeNull();
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns type=java-gradle', async () => {
     const fix = await createFixture({ 'build.gradle': '' });
     try {
       expect((await new JavaGradleDetector().analyze(fix.path, ctx))?.type).toBe('java-gradle');
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns build/ as Yellow when present', async () => {
@@ -59,9 +71,11 @@ describe('JavaGradleDetector.analyze', () => {
     });
     try {
       const result = await new JavaGradleDetector().analyze(fix.path, ctx);
-      const build = result?.items.find(i => i.path === join(fix.path, 'build'));
+      const build = result?.items.find((i) => i.path === join(fix.path, 'build'));
       expect(build?.risk).toBe(RiskTier.Yellow);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns .gradle/ as Yellow when present', async () => {
@@ -71,16 +85,20 @@ describe('JavaGradleDetector.analyze', () => {
     });
     try {
       const result = await new JavaGradleDetector().analyze(fix.path, ctx);
-      const gradleCache = result?.items.find(i => i.path === join(fix.path, '.gradle'));
+      const gradleCache = result?.items.find((i) => i.path === join(fix.path, '.gradle'));
       expect(gradleCache?.risk).toBe(RiskTier.Yellow);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns no items when build dirs absent', async () => {
     const fix = await createFixture({ 'build.gradle': '' });
     try {
       expect((await new JavaGradleDetector().analyze(fix.path, ctx))?.items).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -91,13 +109,17 @@ describe('JavaGradleDetector.scanGlobal', () => {
       const items = await new JavaGradleDetector({ homeDir: fix.path }).scanGlobal(ctx);
       expect(items.length).toBeGreaterThan(0);
       expect(items[0]?.risk).toBe(RiskTier.Green);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns empty when .gradle/caches absent', async () => {
     const fix = await createFixture({});
     try {
       expect(await new JavaGradleDetector({ homeDir: fix.path }).scanGlobal(ctx)).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });

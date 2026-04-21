@@ -72,6 +72,8 @@ describe('DockerDetector.scanGlobal — dangling images', () => {
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
     // third call: build cache → empty
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    // fourth call: orphan volumes ls → empty
+    mockExeca.mockResolvedValueOnce({ stdout: '', exitCode: 0 } as never);
 
     const items = await new DockerDetector().scanGlobal(ctx);
     const imageItems = items.filter((i) => i.metadata?.kind === 'dangling-image');
@@ -91,6 +93,7 @@ describe('DockerDetector.scanGlobal — dangling images', () => {
     } as never);
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '', exitCode: 0 } as never);
 
     const items = await new DockerDetector().scanGlobal(ctx);
     expect(items.filter((i) => i.metadata?.kind === 'dangling-image')).toHaveLength(0);
@@ -109,6 +112,7 @@ describe('DockerDetector.scanGlobal — stopped containers', () => {
       exitCode: 0,
     } as never);
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // build cache
+    mockExeca.mockResolvedValueOnce({ stdout: '', exitCode: 0 } as never); // volumes
 
     const items = await new DockerDetector().scanGlobal(ctx);
     const containerItems = items.filter((i) => i.metadata?.kind === 'stopped-container');
@@ -130,6 +134,7 @@ describe('DockerDetector.scanGlobal — build cache', () => {
       ]),
       exitCode: 0,
     } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '', exitCode: 0 } as never); // volumes
 
     const items = await new DockerDetector().scanGlobal(ctx);
     const cacheItems = items.filter((i) => i.metadata?.kind === 'build-cache');
@@ -144,8 +149,79 @@ describe('DockerDetector.scanGlobal — build cache', () => {
       stdout: JSON.stringify([{ ID: 'b1', Type: 'regular', Size: '300MB', InUse: true }]),
       exitCode: 0,
     } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '', exitCode: 0 } as never); // volumes
 
     const items = await new DockerDetector().scanGlobal(ctx);
     expect(items.filter((i) => i.metadata?.kind === 'build-cache')).toHaveLength(0);
+  });
+});
+
+// ─── scanGlobal — orphan volumes ──────────────────────────────────────────────
+
+describe('DockerDetector.scanGlobal — orphan volumes', () => {
+  const OLD_DATE = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
+  const NEW_DATE = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString();
+
+  it('returns a Yellow item for orphan volumes older than 30 days', async () => {
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // images
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // containers
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // build cache
+    // volumes ls
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify([{ Name: 'myapp_data', Driver: 'local', Scope: 'local' }]),
+      exitCode: 0,
+    } as never);
+    // volumes inspect
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify([
+        {
+          Name: 'myapp_data',
+          Mountpoint: '/var/lib/docker/volumes/myapp_data/_data',
+          CreatedAt: OLD_DATE,
+        },
+      ]),
+      exitCode: 0,
+    } as never);
+
+    const items = await new DockerDetector().scanGlobal(ctx);
+    const vol = items.find((i) => i.metadata?.kind === 'orphan-volume');
+    expect(vol).toBeDefined();
+    expect(vol?.risk).toBe(RiskTier.Yellow);
+    expect(vol?.metadata?.volumeName).toBe('myapp_data');
+    // path must be volume name, NOT mountpoint — prevents direct filesystem deletion
+    expect(vol?.path).toBe('myapp_data');
+  });
+
+  it('skips orphan volumes newer than 30 days', async () => {
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify([{ Name: 'fresh_vol', Driver: 'local', Scope: 'local' }]),
+      exitCode: 0,
+    } as never);
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify([
+        {
+          Name: 'fresh_vol',
+          Mountpoint: '/var/lib/docker/volumes/fresh_vol/_data',
+          CreatedAt: NEW_DATE,
+        },
+      ]),
+      exitCode: 0,
+    } as never);
+
+    const items = await new DockerDetector().scanGlobal(ctx);
+    expect(items.find((i) => i.metadata?.kind === 'orphan-volume')).toBeUndefined();
+  });
+
+  it('returns empty when no orphan volumes exist', async () => {
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '', exitCode: 0 } as never); // no volumes
+
+    const items = await new DockerDetector().scanGlobal(ctx);
+    expect(items.find((i) => i.metadata?.kind === 'orphan-volume')).toBeUndefined();
   });
 });

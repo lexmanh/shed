@@ -12,14 +12,18 @@ describe('RubyDetector.quickProbe', () => {
     const fix = await createFixture({ Gemfile: 'source "https://rubygems.org"' });
     try {
       expect(await new RubyDetector().quickProbe(fix.path)).toBe(true);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns false when Gemfile absent', async () => {
     const fix = await createFixture({ 'package.json': '{}' });
     try {
       expect(await new RubyDetector().quickProbe(fix.path)).toBe(false);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -28,14 +32,18 @@ describe('RubyDetector.analyze', () => {
     const fix = await createFixture({});
     try {
       expect(await new RubyDetector().analyze(fix.path, ctx)).toBeNull();
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns type=ruby', async () => {
     const fix = await createFixture({ Gemfile: 'source "https://rubygems.org"' });
     try {
       expect((await new RubyDetector().analyze(fix.path, ctx))?.type).toBe('ruby');
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns vendor/bundle as Yellow when present', async () => {
@@ -45,16 +53,20 @@ describe('RubyDetector.analyze', () => {
     });
     try {
       const result = await new RubyDetector().analyze(fix.path, ctx);
-      const vendor = result?.items.find(i => i.path === join(fix.path, 'vendor', 'bundle'));
+      const vendor = result?.items.find((i) => i.path === join(fix.path, 'vendor', 'bundle'));
       expect(vendor?.risk).toBe(RiskTier.Yellow);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns no items when vendor/bundle absent', async () => {
     const fix = await createFixture({ Gemfile: 'source "https://rubygems.org"' });
     try {
       expect((await new RubyDetector().analyze(fix.path, ctx))?.items).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });
 
@@ -65,13 +77,17 @@ describe('RubyDetector.scanGlobal', () => {
       const items = await new RubyDetector({ homeDir: fix.path }).scanGlobal(ctx);
       expect(items.length).toBeGreaterThan(0);
       expect(items[0]?.risk).toBe(RiskTier.Green);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 
   it('returns empty when cache absent', async () => {
     const fix = await createFixture({});
     try {
       expect(await new RubyDetector({ homeDir: fix.path }).scanGlobal(ctx)).toHaveLength(0);
-    } finally { await fix.rm(); }
+    } finally {
+      await fix.rm();
+    }
   });
 });

@@ -1,13 +1,15 @@
 {
   "name": "@lexmanh/shed-mcp-server",
-  "version": "0.1.0-beta.1",
+  "version": "0.2.0-beta.1",
   "description": "MCP server for Shed — exposes disk scan and analysis tools to Claude Desktop and Claude Code",
   "type": "module",
   "bin": {
     "shed-mcp": "./dist/server.js"
   },
   "main": "./dist/server.js",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/server.ts --format esm --clean",
     "dev": "tsup src/server.ts --format esm --watch",

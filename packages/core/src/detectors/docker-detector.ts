@@ -38,6 +38,18 @@ interface DockerBuildCache {
   InUse: boolean;
 }
 
+interface DockerVolume {
+  Name: string;
+  Driver: string;
+  Scope: string;
+}
+
+interface DockerVolumeDetail {
+  Name: string;
+  Mountpoint: string;
+  CreatedAt: string;
+}
+
 function parseDockerSize(sizeStr: string): number {
   const match = /^([\d.]+)\s*(B|kB|KB|MB|GB|TB)?$/i.exec(sizeStr.trim());
   if (!match) return 0;
@@ -66,12 +78,13 @@ export class DockerDetector extends BaseDetector {
   }
 
   override async scanGlobal(_ctx: DetectorContext): Promise<readonly CleanableItem[]> {
-    const [images, containers, buildCache] = await Promise.all([
+    const [images, containers, buildCache, volumes] = await Promise.all([
       this.listDanglingImages(),
       this.listStoppedContainers(),
       this.listUnusedBuildCache(),
+      this.listOrphanVolumes(),
     ]);
-    return [...images, ...containers, ...buildCache];
+    return [...images, ...containers, ...buildCache, ...volumes];
   }
 
   private async listDanglingImages(): Promise<CleanableItem[]> {
@@ -149,6 +162,45 @@ export class DockerDetector extends BaseDetector {
           metadata: { kind: 'build-cache', entryCount: unused.length },
         },
       ];
+    } catch {
+      return [];
+    }
+  }
+
+  private async listOrphanVolumes(): Promise<CleanableItem[]> {
+    try {
+      const { stdout: listOut } = await execa(
+        'docker',
+        ['volume', 'ls', '--filter', 'dangling=true', '--format', '{{json .}}'],
+        { reject: false, timeout: 10000 },
+      );
+      if (!listOut.trim()) return [];
+      const volumes = this.parseDockerJson<DockerVolume>(listOut);
+      if (volumes.length === 0) return [];
+
+      const names = volumes.map((v) => v.Name);
+      const { stdout: inspectOut } = await execa('docker', ['volume', 'inspect', ...names], {
+        reject: false,
+        timeout: 10000,
+      });
+      const details = JSON.parse(inspectOut) as DockerVolumeDetail[];
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+
+      // path uses volume name (not mountpoint) — consistent with other Docker items
+      // (image IDs, container IDs). Prevents SafetyChecker from trashing the raw
+      // /var/lib/docker/volumes/ path directly, which would bypass Docker's state.
+      return details
+        .filter((d) => Date.now() - new Date(d.CreatedAt).getTime() > thirtyDaysMs)
+        .map((d) => ({
+          id: `docker::volume::${d.Name}`,
+          path: d.Name,
+          detector: this.id,
+          risk: RiskTier.Yellow,
+          sizeBytes: 0,
+          lastModified: new Date(d.CreatedAt).getTime(),
+          description: `Orphan Docker volume "${d.Name}" (not attached to any container) — remove with \`docker volume rm ${d.Name}\``,
+          metadata: { kind: 'orphan-volume', volumeName: d.Name },
+        }));
     } catch {
       return [];
     }

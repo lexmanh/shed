@@ -9,7 +9,12 @@ export interface JavaGradleDetectorOptions {
   readonly homeDir?: string;
 }
 
-const GRADLE_SIGNATURES = ['build.gradle', 'build.gradle.kts', 'settings.gradle', 'settings.gradle.kts'];
+const GRADLE_SIGNATURES = [
+  'build.gradle',
+  'build.gradle.kts',
+  'settings.gradle',
+  'settings.gradle.kts',
+];
 
 export class JavaGradleDetector extends BaseDetector {
   readonly id = 'java-gradle';
