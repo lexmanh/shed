@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+import { hostname } from 'node:os';
 import { resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import {
@@ -25,6 +27,10 @@ import {
 } from '@lexmanh/shed-core';
 import pc from 'picocolors';
 import { verbose } from '../verbose.js';
+
+const require = createRequire(import.meta.url);
+const { version: SHED_VERSION } = require('../package.json') as { version: string };
+const JSON_SCHEMA_VERSION = 1;
 
 export interface ScanOptions {
   json?: boolean;
@@ -61,6 +67,8 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
   const spinner = options.json ? null : p.spinner();
   verbose(`scan root: ${rootDir}`);
   spinner?.start(`Scanning ${rootDir} …`);
+
+  const scanStartedAt = Date.now();
 
   const scanner = new Scanner([
     new NodeDetector(),
@@ -106,13 +114,43 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
   );
 
   if (options.json) {
+    const byRisk = { green: 0, yellow: 0, red: 0 };
+    let detectOnly = 0;
+    for (const item of allItems) {
+      byRisk[item.risk]++;
+      if (item.metadata?.detectOnly === true) detectOnly++;
+    }
+
+    const projectsOut = projects.map((proj: DetectedProject) => ({
+      root: proj.root,
+      detectors: [...new Set(proj.items.map((i) => i.detector))],
+      itemCount: proj.items.length,
+      totalBytes: proj.items.reduce((s, i) => s + i.sizeBytes, 0),
+    }));
+
     console.log(
       JSON.stringify(
         {
-          root: rootDir,
-          projects: projects.length,
+          schemaVersion: JSON_SCHEMA_VERSION,
+          shedVersion: SHED_VERSION,
+          timestamp: new Date(scanStartedAt).toISOString(),
+          host: {
+            hostname: hostname(),
+            platform: process.platform,
+            arch: process.arch,
+          },
+          scan: {
+            root: rootDir,
+            durationMs: Date.now() - scanStartedAt,
+          },
+          summary: {
+            totalBytes,
+            totalItems: allItems.length,
+            byRisk,
+            detectOnly,
+          },
+          projects: projectsOut,
           items: allItems,
-          totalBytes,
         },
         null,
         2,
