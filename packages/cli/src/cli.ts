@@ -25,7 +25,7 @@ const program = new Command();
 
 program
   .name('shed')
-  .description('Safe, cross-platform disk cleanup for developers')
+  .description('Safe disk cleanup for dev machines and Linux servers')
   .version(version)
   .option('-v, --verbose', 'Enable verbose logging');
 

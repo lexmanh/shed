@@ -53,13 +53,14 @@ Applies to both audiences — developers (uncommitted code) and sysadmins (produ
 
 > Pace assumes part-time maintenance. Phases are directional, not commitments.
 >
-> **Baseline (v0.1, complete):** developer tools for Node, Python, Rust, Docker, Flutter, Xcode, Android, IDE caches, CocoaPods — single machine, CLI + MCP server.
+> **Baseline (v0.2, complete):** developer tools for Node, Python, Rust, Go, Java, Ruby, .NET, Docker, Flutter, Xcode, Android, IDE caches, CocoaPods — plus Linux system/webserver/database detectors — single machine, CLI + MCP server.
 > Phases below represent planned expansion beyond this baseline.
 
-### Phase 1 — Docker + Linux foundation
-- Docker overlay2 analyzer, dangling images, build cache, orphan volumes
-- System-level: `/var/log/journal`, `/var/cache/apt`, `/var/cache/yum`, old kernels in `/boot`, `/tmp`, crash dumps
-- Nginx / Apache log detectors (rotated `.gz`, custom paths not in logrotate)
+### ✅ Phase 1 — Docker + Linux foundation
+- Docker orphan volumes (Yellow, age > 30 days)
+- System-level: `/var/log/journal` (Yellow), `/var/cache/apt`, `/var/cache/yum`, `/var/cache/dnf` (Green), crash dumps (Yellow)
+- Nginx / Apache / httpd rotated `.gz` log detectors (Green, > 30 days)
+- Database detect-only: MySQL binary logs, PostgreSQL WAL, MongoDB diagnostic data (Red, never deleted)
 
 ### Phase 2 — Web / app server stacks
 - Tomcat: `catalina.out`, `localhost.{date}.log`, heap dumps `.hprof`

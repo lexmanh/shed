@@ -1,17 +1,17 @@
 # Shed
 
-> Reclaim disk space from dev caches — without breaking active work.
+> Safe disk cleanup for dev machines and Linux servers — without breaking active work.
 
 [![CI](https://github.com/lexmanh/shed/actions/workflows/ci.yml/badge.svg)](https://github.com/lexmanh/shed/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@lexmanh/shed-cli/beta)](https://www.npmjs.com/package/@lexmanh/shed-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Every developer accumulates gigabytes of forgotten `node_modules`, stale Docker images, Xcode DerivedData, Flutter build artifacts, and abandoned project caches. Existing tools either clean too aggressively (breaking active work) or too narrowly (one runtime only).
+Developers accumulate gigabytes of forgotten `node_modules`, stale Docker images, Xcode DerivedData, and Flutter caches. Linux servers fill up with rotated logs, apt/yum caches, and journal data. Existing tools either clean too aggressively or cover only one runtime.
 
-**Shed** scans your machine, classifies everything by risk tier, runs safety checks, and lets you reclaim space interactively — defaulting to Trash so you can always undo.
+**Shed** scans your machine or server, classifies every item by risk tier, runs safety checks, and lets you reclaim space interactively — defaulting to Trash so you can always undo.
 
 ```
-◇  Found 33 cleanable items across 16 project(s).
+◇  Found 47 cleanable items across 18 project(s).
 
   ~/Projects/myapp  2.70 GB
     ● Yellow  node_modules  1.57 GB
@@ -22,7 +22,15 @@ Every developer accumulates gigabytes of forgotten `node_modules`, stale Docker 
     ● Green   ~/Library/Caches/JetBrains/Rider2025.1                     4.06 GB
     ● Green   ~/Library/Application Support/Code/User/workspaceStorage   3.94 GB
 
-  Total recoverable: 27.82 GB — run shed clean to proceed.
+  linux server  4.12 GB
+    ● Green   /var/cache/apt/archives   1.84 GB
+    ● Yellow  /var/log/journal          1.71 GB
+    ● Green   nginx rotated logs ×14     570 MB
+
+  ⚠  Detect-only (never deleted)
+    ● Red     MySQL binary logs at /var/lib/mysql — use PURGE BINARY LOGS
+
+  Total recoverable: 26.65 GB — run shed clean to proceed.
 ```
 
 ## Install
@@ -39,6 +47,7 @@ Requires Node 22+.
 # Scan for cleanable items (read-only, safe)
 shed scan ~
 shed scan ~/Projects
+shed scan /           # Linux server scan
 
 # Preview cleanup without touching anything (default)
 shed clean ~/Projects
@@ -63,9 +72,10 @@ Every item is classified into one of three tiers before anything is touched:
 
 | Tier | Examples | Default action |
 |------|----------|----------------|
-| 🟢 **Green** | Global npm/pip/cargo caches, JetBrains caches, VSCode workspaceStorage | Delete after confirmation summary |
-| 🟡 **Yellow** | `node_modules`, `build/`, `target/`, `.dart_tool/` | Safety checks + per-item confirmation |
+| 🟢 **Green** | Global npm/pip/cargo caches, JetBrains caches, apt archives, rotated `.gz` logs | Delete after confirmation summary |
+| 🟡 **Yellow** | `node_modules`, `build/`, `target/`, journald logs, crash dumps, orphan Docker volumes | Safety checks + per-item confirmation |
 | 🔴 **Red** | Anything with uncommitted changes, recently modified | Skipped unless `--include-red` |
+| 🚫 **Detect-only** | MySQL binary logs, PostgreSQL WAL, MongoDB diagnostic data | Surface + warn, never deleted |
 
 **Safety checks run before every Yellow/Red operation:**
 
@@ -83,12 +93,20 @@ Every item is classified into one of three tiers before anything is touched:
 | Node.js | `node_modules`, `.next`, `.nuxt`, `dist`, `build` | `~/.npm`, `~/.yarn/cache`, `~/.pnpm-store`, `~/.bun` |
 | Python | `venv`, `.venv`, `__pycache__`, `.pytest_cache` | `~/.cache/pip`, poetry cache |
 | Rust | `target/` | `~/.cargo/registry`, `~/.cargo/git` |
-| Docker | Dangling images, stopped containers, build cache | — |
-| Xcode | — | `~/Library/Developer/Xcode/DerivedData` |
+| Go | `vendor/` | `$GOPATH/pkg/mod` |
+| Java / Maven | `target/` | `~/.m2/repository` |
+| Java / Gradle | `build/`, `.gradle/` | `~/.gradle/caches` |
+| Ruby | `vendor/bundle/` | `~/.bundle/cache` |
+| .NET | `bin/`, `obj/` | `~/.nuget/packages` |
 | Flutter | `build/`, `.dart_tool/` | `~/.pub-cache`, `~/.fvm/versions` |
 | Android | `.gradle/`, `build/` | `~/.gradle/caches` |
 | CocoaPods | `Pods/` | `~/.cocoapods/repos` |
+| Xcode | — | `~/Library/Developer/Xcode/DerivedData` |
+| Docker | Dangling images, stopped containers, orphan volumes, build cache | — |
 | IDE | — | JetBrains system caches, VSCode workspaceStorage |
+| **Linux System** | — | journald logs, apt/yum/dnf caches, crash dumps |
+| **Webserver** | — | Nginx/Apache/httpd rotated `.gz` logs > 30 days |
+| **Database** *(detect-only)* | — | MySQL binary logs, PostgreSQL WAL, MongoDB diagnostic data |
 
 ## MCP Server (Claude Desktop / Claude Code)
 
@@ -125,11 +143,11 @@ Available tools: `list_projects`, `analyze_project`, `estimate_cleanup`, `get_di
 | [`@lexmanh/shed-agent`](https://www.npmjs.com/package/@lexmanh/shed-agent) | AI provider abstraction (Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, Ollama) |
 | [`@lexmanh/shed-mcp-server`](https://www.npmjs.com/package/@lexmanh/shed-mcp-server) | MCP server for Claude Desktop/Code |
 
-## Beta
+## Contributing
 
-Shed is currently in **closed beta**. See [BETA_PROGRAM.md](./BETA_PROGRAM.md) for tester responsibilities and how to report bugs.
+Shed is open source. See [CONTRIBUTING.md](./CONTRIBUTING.md) for how to contribute, and [CLAUDE.md](./CLAUDE.md) for the safety rules that govern all code in this repo.
 
-When reporting issues, include:
+When reporting bugs, include:
 
 ```bash
 shed --version

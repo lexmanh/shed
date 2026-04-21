@@ -1,7 +1,7 @@
 {
   "name": "@lexmanh/shed-core",
   "version": "0.2.0-beta.1",
-  "description": "Core detection, safety checks, and risk classification engine for Shed",
+  "description": "Disk cleanup engine for dev machines and Linux servers — git-aware, tiered safety, trash-by-default",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

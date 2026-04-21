@@ -1,7 +1,7 @@
 # Shed — Project Plan
 
 > Tactical execution doc. For vision and positioning, read [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md).
-> Current status: **Public / Open Source** (v0.1.0-beta).
+> Current status: **Public / Open Source** (v0.2.0-beta.1).
 
 ---
 
