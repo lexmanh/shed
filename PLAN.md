@@ -1,42 +1,35 @@
 # Shed — Project Plan
 
-> Safe, cross-platform, AI-aware disk cleanup for developers.
+> Tactical execution doc. For vision and positioning, read [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md).
 > Current status: **Public / Open Source** (v0.1.0-beta).
-
----
-
-## Vision
-
-Developers accumulate 50-200GB of dev caches, abandoned `node_modules`, stale Docker images, Xcode DerivedData, and build artifacts. Existing tools (dev-cleaner, npkill, kondo) either clean too aggressively (breaking active work) or too narrowly (one runtime only).
-
-**Shed's promise**: *"Reclaim disk space without breaking your workflow."*
-
-Every cleanup operation passes through a tiered safety framework that knows about git state, running processes, lock files, and project context. AI assists in edge cases. Default is reversible (Trash). Works identically on macOS, Windows, and Linux.
 
 ---
 
 ## Positioning Matrix
 
-| Tool | Scope | Safety | Cross-platform | AI |
-|---|---|---|---|---|
-| npkill | Node only | Medium | Yes | No |
-| kondo | Multi-runtime | Medium | Yes | No |
-| dev-cleaner | Wide | **Low** (simulator wipes, log deletion) | macOS/Win | No |
-| CleanMyMac | System + dev | High | macOS only | No |
-| **Shed** | Wide | **High** (tiered, git-aware) | **All 3** | **Yes** |
+| Tool | Scope | Safety | Cross-platform | Fleet/Centralized | AI |
+|---|---|---|---|---|---|
+| npkill | Node only | Medium | Yes | No | No |
+| kondo | Multi-runtime | Medium | Yes | No | No |
+| dev-cleaner | Wide | **Low** (simulator wipes, log deletion) | macOS/Win | No | No |
+| CleanMyMac | System + dev | High | macOS only | No | No |
+| **Shed** | Dev + Server | **High** (tiered, git-aware) | **All 3** | **Yes** *(Phase 7)* | **Yes** |
 
 ---
 
 ## Architecture Overview
 
-Monorepo (`pnpm` workspaces) với 4 packages:
+Monorepo (`pnpm` workspaces):
 
 ```
 @lxmanh/shed-core          — scan, detect, classify, safety checks
 @lxmanh/shed-cli           — `shed` binary
 @lxmanh/shed-agent         — AI provider abstraction
 @lxmanh/shed-mcp-server    — MCP for Claude Desktop/Code
+@lxmanh/shed-fleet         — SSH fleet management (Phase 7, planned)
 ```
+
+Dependency direction: `cli`, `agent`, `mcp-server`, `fleet` → `core` (one-way only).
 
 ---
 
@@ -50,6 +43,7 @@ Mọi thao tác cleanup được phân loại vào 3 tier:
 - Docker dangling images
 - Rust `target/` ở project đã git-clean
 - Python `__pycache__/`, `.pytest_cache/`
+- Nginx/Apache rotated `.gz` logs > 30 ngày
 
 **🟡 Yellow Tier — Context-dependent**
 - `node_modules/` (check age + git state + workspace root)
@@ -57,21 +51,28 @@ Mọi thao tác cleanup được phân loại vào 3 tier:
 - `build/`, `dist/` directories
 - Flutter `build/`, `.dart_tool/`
 - CocoaPods `Pods/`
+- Docker orphan volumes > 30 ngày
 
 **🔴 Red Tier — Stateful, opt-in only**
 - Xcode Simulator Devices
 - Any git-tracked lock file
-- System logs
+- System logs (active)
 - Time Machine snapshots
+
+**🚫 Detect-only — Never deleted, surface + suggest**
+- MySQL binary logs (`mysql-bin.*`)
+- PostgreSQL WAL (`pg_wal/`)
+- MongoDB diagnostic data
+- Redis RDB/AOF, RabbitMQ mnesia, Kafka log segments
 
 ### Safety Checks
 
-1. **Git-aware**: gitignored paths (node_modules, build/) không bị block khi repo dirty — chỉ block nếu path có tracked files với uncommitted changes
+1. **Git-aware**: gitignored paths không bị block khi repo dirty — chỉ block nếu path có tracked files với uncommitted changes
 2. **Process-aware**: lsof (Unix) / Get-Process (Win) — SKIP nếu có process đang hold
 3. **Recency guard**: modified < 30 ngày → SKIP (configurable)
 4. **Symlink guard**: không follow symlinks ra ngoài project root
 5. **Size sanity**: > 10GB đòi extra confirmation
-6. **Sacred path guard**: ~/.ssh, ~/.aws, ~/.kube, ~/.git, v.v. — absolute block
+6. **Sacred path guard**: `~/.ssh`, `~/.aws`, `~/.kube`, `~/.git`, v.v. — absolute block
 
 ### Undo Support
 
@@ -80,6 +81,8 @@ Default: move to OS Trash. `shed undo` liệt kê + restore. `--hard-delete` byp
 ---
 
 ## Roadmap
+
+Phases là milestone-based, không có deadline cứng. Fit hobby pace.
 
 ### ✅ Phase 0 — Foundation
 
@@ -135,43 +138,78 @@ Default: move to OS Trash. `shed undo` liệt kê + restore. `--hard-delete` byp
 
 ---
 
-## Backlog — Tính năng dự kiến
+### 🔲 Phase 6 — Docker + Linux Server Foundation
 
-### v0.2 — Distribution & Adoption
+*Trigger: khi bắt đầu dogfood trên Linux server production.*
 
-- [ ] Homebrew tap (`brew install lexmanh/shed/shed`)
+- [ ] Docker overlay2 analyzer, orphan volumes, build cache (extend existing docker-detector)
+- [ ] System detectors: `/var/log/journal`, `/var/cache/apt`, `/var/cache/yum`, `/var/cache/dnf`
+- [ ] Old kernels in `/boot` (detect + suggest `apt autoremove`, không tự xóa)
+- [ ] Crash dumps: `/var/crash/`, `/var/core/`
+- [ ] Nginx/Apache rotated log detector (`.gz` > 30 ngày, custom paths ngoài logrotate)
+- [ ] Detect-only: MySQL binary logs, PostgreSQL WAL, MongoDB diagnostic
+
+### 🔲 Phase 7 — SSH Fleet (`packages/fleet`)
+
+*Trigger: khi Phase 6 dogfood ổn định + có video demo.*
+
+- [ ] New package `@lxmanh/shed-fleet`
+- [ ] SSH transport (agentless, key-based)
+- [ ] Fleet inventory: `~/.config/shed/fleet.db` (SQLite)
+- [ ] `shed fleet add/list/remove` — quản lý server inventory
+- [ ] `shed fleet scan [--tag X]` — parallel scan, result aggregation
+- [ ] `shed fleet clean [--tier green] [--execute]` — per-server confirmation
+- [ ] `shed fleet watch --threshold 85` — periodic polling daemon
+- [ ] `--no-clean` tag: server chỉ scan, không bao giờ clean (cho prod DB servers)
+- [ ] Audit log: `~/.config/shed/fleet-audit.log`
+- [ ] Concurrency limit, timeout, retry
+
+### 🔲 Phase 8 — Database + Messaging (Detect-only)
+
+*Trigger: sau khi fleet stable, có user request từ DBA/sysadmin persona.*
+
+- [ ] MySQL: detect binary log growth, suggest `PURGE BINARY LOGS`
+- [ ] PostgreSQL: detect WAL bloat, suggest checkpoint / replication check
+- [ ] MongoDB: detect diagnostic data, oplog size
+- [ ] Redis: detect RDB/AOF size + age
+- [ ] RabbitMQ mnesia, Kafka log segments
+- [ ] Backup repos: rsnapshot, Borg, Restic (detect stale, không delete)
+
+### 🔲 Phase 9 — AI Agent Layer
+
+*Trigger: sau khi fleet có user base nhỏ, cần automation.*
+
+- [ ] Disk pressure prediction (linear regression, 30-day history)
+- [ ] Policy DSL (`~/.config/shed/policy.yaml`) — schedule + trigger + tier actions
+- [ ] Human-in-the-loop approval (reply "approve" qua Slack/Telegram)
+- [ ] Notification: Slack webhook, Telegram bot, Discord webhook, email SMTP, generic webhook
+- [ ] LLM root cause analysis via MCP tools
+
+---
+
+## Distribution (parallel track — thấp priority hơn Fleet)
+
+*Làm dần trong background, không block Fleet development.*
+
+- [ ] Homebrew tap (`brew install lxmanh/shed/shed`)
 - [ ] Scoop manifest cho Windows
-- [ ] `shed scan --json` output hoàn chỉnh
 - [ ] Shell completions (bash/zsh/fish/powershell)
-- [ ] Landing page + demo GIF trên GitHub Pages
+- [ ] `shed scan --json` output hoàn chỉnh
+- [ ] Landing page + asciinema demo
 - [ ] `llms.txt` cho AI crawlers
-- [ ] Submit: HN, Reddit, Product Hunt, Vietnamese communities
 
-### v0.3 — More Detectors
+---
 
-- [ ] Go (`$GOPATH/pkg/mod` — thường vài GB)
+## More Detectors (v0.3 scope)
+
+- [ ] Go (`$GOPATH/pkg/mod`)
 - [ ] Java / Maven (`~/.m2/repository`)
 - [ ] Gradle shared cache (`~/.gradle/caches`)
 - [ ] Ruby / Bundler (`vendor/bundle`, `~/.bundle`)
 - [ ] .NET / NuGet (`~/.nuget/packages`)
 - [ ] Bun cache (`~/.bun/install/cache`)
-- [ ] Browser dev tool caches (Chrome, Firefox)
-
-### v0.4 — UX & Power Features
-
-- [ ] `shed scan` interactive mode (filter/sort/search)
-- [ ] `shed stats` — lịch sử freed disk space theo thời gian
-- [ ] `shed schedule` — tự động cleanup định kỳ
-- [ ] `--since <date>` flag — chỉ xét items không dùng từ ngày X
-- [ ] `shed ask "<query>"` — natural language cleanup query via AI
-
-### v1.0 — Stable
-
-- [ ] npm publish stable (bỏ beta dist-tag)
-- [ ] Windows long path testing thực tế (`\\?\` prefix)
-- [ ] E2E test suite đầy đủ
-- [ ] 80%+ test coverage overall, 100% safety-critical
-- [ ] docs/architecture.md, docs/detector-plugin-guide.md
+- [ ] Tomcat: `catalina.out`, heap dumps `.hprof`
+- [ ] PM2: `~/.pm2/logs/`
 
 ---
 
@@ -192,18 +230,23 @@ Default: move to OS Trash. `shed undo` liệt kê + restore. `--hard-delete` byp
 - **Trash**: trash (cross-platform)
 - **AI SDKs**: @anthropic-ai/sdk, openai, @google/genai
 - **MCP**: @modelcontextprotocol/sdk
+- **SSH** *(Phase 7)*: node-ssh
+- **Fleet DB** *(Phase 7)*: better-sqlite3
+- **Policy config** *(Phase 9)*: js-yaml
+- **Scheduler** *(Phase 9)*: node-cron
 
 ---
 
 ## Non-Goals
 
 - GUI application
-- Real-time monitoring / background daemon
+- **Realtime streaming metrics** (Datadog/Grafana-style) — `shed fleet watch` là periodic polling, không phải realtime
 - Cloud storage cleanup (S3, Dropbox, iCloud)
 - Email/photo library cleanup
 - Malware scanning
 - System optimization ngoài disk space
 - Uninstaller cho apps
+- Direct deletion của database files — luôn detect-only
 
 ---
 
@@ -215,18 +258,16 @@ Default: move to OS Trash. `shed undo` liệt kê + restore. `--hard-delete` byp
 - CI: xanh trên cả 3 OS
 - Cold startup: < 200ms
 
-**Community:**
-- 500+ GitHub stars trong 30 ngày đầu
-- 10+ external contributors
-- Mention trong ít nhất 3 dev newsletters
-
 **User value:**
 - Average disk freed per user: > 10GB
 - "broke my project" rate: < 0.1%
+- Maintainer dogfoods shed trong job chính (primary signal — nếu không tự dùng được thì cut)
 
 ---
 
 ## Open Questions
 
-1. License: MIT (đang dùng) vs Apache 2.0 (patent protection)?
-2. Domain `shed.dev` — check availability nếu muốn landing page riêng
+1. **SSH library**: `node-ssh` (wrapper, dễ dùng) vs `ssh2` trực tiếp (control nhiều hơn, ít dependency)?
+2. **Fleet inventory**: SQLite (`better-sqlite3`) vs JSON flat file (đơn giản hơn, đủ cho < 100 servers)?
+3. **Domain**: `shed.dev` — check availability trước khi launch Phase 7.
+4. **License**: Core packages (`core`, `cli`, `mcp-server`) → MIT (hiện tại). Fleet + Pro agent features → commercial-friendly license, công bố khi gần launch Pro tier.
