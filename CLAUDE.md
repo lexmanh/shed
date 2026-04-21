@@ -209,7 +209,7 @@ Khi implement AI-powered features:
 
 - `PLAN.md` — roadmap, phases, priorities
 - `docs/architecture.md` — package structure, detector catalog, fleet design
-- `docs/safety-testing.md` — cách viết safety tests (TBD)
+- `docs/safety-testing.md` — cách viết safety tests (mandatory read trước khi động vào safety/ hoặc detectors/)
 - `docs/detector-plugin-guide.md` — viết detector mới (TBD)
 - `CONTRIBUTING.md` — hướng dẫn cho contributors
 
