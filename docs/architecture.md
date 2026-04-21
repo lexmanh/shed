@@ -11,8 +11,10 @@ packages/
 ├── core/        # Pure logic, no user I/O. Fully unit-testable.
 ├── cli/         # Commander + clack UI. Depends on core.
 ├── agent/       # AI provider abstraction. Depends on core.
-├── mcp-server/  # MCP server for Claude Desktop. Depends on core + agent.
-└── fleet/       # SSH fleet management. Depends on core. (Phase 3)
+└── mcp-server/  # MCP server for Claude Desktop. Depends on core + agent.
+
+# Planned (Phase 7):
+└── fleet/       # SSH fleet management. Depends on core.
 ```
 
 ### Dependency direction — strict
@@ -32,7 +34,7 @@ fleet ─────┘
 - **cli**: Argument parsing, interactive prompts, output formatting, progress display. Thin — UI layer over core only.
 - **agent**: Wraps AI providers (Anthropic, OpenAI, Ollama, etc.) behind a unified interface. Handles API keys via `keytar`. Privacy-first: always prompt user before sending data to external APIs.
 - **mcp-server**: Implements MCP tool schema for scan/analyze/cleanup. Reuses core logic.
-- **fleet** *(Phase 3)*: Agentless SSH transport. Runs on the admin's machine, no agent install on target servers.
+- **fleet** *(planned — Phase 7)*: Agentless SSH transport. Runs on the admin's machine, no agent install on target servers.
 
 ---
 

@@ -52,6 +52,9 @@ Applies to both audiences — developers (uncommitted code) and sysadmins (produ
 ## 4. Tentative Roadmap
 
 > Pace assumes part-time maintenance. Phases are directional, not commitments.
+>
+> **Baseline (v0.1, complete):** developer tools for Node, Python, Rust, Docker, Flutter, Xcode, Android, IDE caches, CocoaPods — single machine, CLI + MCP server.
+> Phases below represent planned expansion beyond this baseline.
 
 ### Phase 1 — Docker + Linux foundation
 - Docker overlay2 analyzer, dangling images, build cache, orphan volumes
