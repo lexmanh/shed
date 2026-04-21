@@ -24,7 +24,11 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
+          # No registry-url here — setup-node would write NODE_AUTH_TOKEN into .npmrc,
+          # which blocks OIDC auth. We configure the registry manually instead.
+
+      - name: Configure npm registry
+        run: npm config set registry https://registry.npmjs.org/
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -50,6 +54,9 @@ jobs:
             DIST_TAG="latest"
           fi
           echo "Publishing with dist-tag: $DIST_TAG"
-          pnpm -r publish --no-git-checks --tag "$DIST_TAG"
+          for pkg in packages/core packages/cli packages/agent packages/mcp-server; do
+            echo "--- Publishing $pkg ---"
+            (cd "$pkg" && npm publish --provenance --access public --tag "$DIST_TAG")
+          done
         env:
           NPM_CONFIG_PROVENANCE: true
