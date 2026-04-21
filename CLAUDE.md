@@ -208,7 +208,7 @@ Khi implement AI-powered features:
 ## 10. Resources
 
 - `PLAN.md` — roadmap, phases, priorities
-- `docs/architecture.md` — deep dive kiến trúc (TBD)
+- `docs/architecture.md` — package structure, detector catalog, fleet design
 - `docs/safety-testing.md` — cách viết safety tests (TBD)
 - `docs/detector-plugin-guide.md` — viết detector mới (TBD)
 - `CONTRIBUTING.md` — hướng dẫn cho contributors
