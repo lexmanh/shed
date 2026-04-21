@@ -41,6 +41,17 @@ jobs:
       - name: Build all
         run: pnpm build
 
+      - name: Debug npm auth
+        run: |
+          echo "npm version: $(npm --version)"
+          echo "node version: $(node --version)"
+          echo "Has OIDC URL: $([[ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]] && echo YES || echo NO)"
+          echo "npmrc contents:"
+          cat ~/.npmrc || echo "(no ~/.npmrc)"
+          npm whoami || echo "(not logged in)"
+        env:
+          NODE_AUTH_TOKEN: ''
+
       - name: Publish packages
         run: |
           TAG="${GITHUB_REF_NAME}"
@@ -52,7 +63,7 @@ jobs:
           echo "Publishing with dist-tag: $DIST_TAG"
           for pkg in packages/core packages/cli packages/agent packages/mcp-server; do
             echo "--- Publishing $pkg ---"
-            (cd "$pkg" && npm publish --provenance --access public --tag "$DIST_TAG")
+            (cd "$pkg" && npm publish --provenance --access public --tag "$DIST_TAG" --loglevel verbose 2>&1 | head -60)
           done
         env:
           NODE_AUTH_TOKEN: ''
