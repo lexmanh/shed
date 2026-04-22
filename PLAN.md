@@ -144,11 +144,11 @@ Phases là milestone-based, không có deadline cứng. Fit hobby pace.
 - [x] SystemDetector: `/var/log/journal` (Yellow), `/var/cache/apt` (Green), `/var/cache/yum` (Green), `/var/cache/dnf` (Green), crash dumps `/var/crash/` + `/var/core/` (Yellow) — Linux-only
 - [x] WebserverDetector: Nginx/Apache/httpd rotated `.gz` logs > 30 days (Green)
 - [x] DatabaseDetector: detect-only Red items for MySQL binary logs, PostgreSQL WAL, MongoDB diagnostic.data
-- [ ] Old kernels in `/boot` (detect + suggest `apt autoremove`) — deferred, needs dpkg integration
+- [x] Old kernels in `/boot` — detect-only Red item via dpkg/rpm enumeration; suggests `apt autoremove --purge` or `dnf remove`. Never touches /boot directly (would bypass GRUB/initramfs hooks).
 
 ### 🔲 Phase 7 — SSH Fleet (`packages/fleet`)
 
-*Trigger: khi Phase 6 dogfood ổn định + có video demo.*
+*Trigger: dogfood Phase 6 trên ≥1 Linux server thật + có video demo.*
 
 - [ ] New package `@lexmanh/shed-fleet`
 - [ ] SSH transport (agentless, key-based)
