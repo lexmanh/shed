@@ -89,6 +89,61 @@ describe('SystemDetector.scanGlobal — journal logs', () => {
       await fix.rm();
     }
   });
+
+  // Bug #4 (dogfood beta.3 → beta.6): journal-logs lastModified used the dir
+  // mtime, which doesn't update when journald appends to existing .journal
+  // files. Result: scan reports "modified Apr 2025" while the journal is
+  // actively being written to. Fix: scan the .journal files themselves and use
+  // the newest mtime.
+  it('uses newest .journal file mtime, not directory mtime', async () => {
+    const fix = await createFixture({
+      'var/log/journal/machine-id/system.journal': 'payload',
+      'var/log/journal/machine-id/user-1000.journal': 'payload',
+    });
+    try {
+      const { stat, utimes } = await import('node:fs/promises');
+      const journalPath = join(fix.path, 'var/log/journal');
+      const machineDir = join(journalPath, 'machine-id');
+
+      // Force the directory mtime to look stale (1 year ago) and the file
+      // mtime to look fresh (yesterday). Bug #4: detector should pick the
+      // FILE mtime, not the dir mtime.
+      const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      await utimes(journalPath, oneYearAgo, oneYearAgo);
+      await utimes(machineDir, oneYearAgo, oneYearAgo);
+      await utimes(join(machineDir, 'system.journal'), yesterday, yesterday);
+      await utimes(join(machineDir, 'user-1000.journal'), oneYearAgo, oneYearAgo);
+
+      const items = await new SystemDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
+      const journal = items.find((i) => i.metadata?.kind === 'journal-logs');
+      expect(journal).toBeDefined();
+
+      const expectedMtime = (await stat(join(machineDir, 'system.journal'))).mtimeMs;
+      const dirMtime = (await stat(journalPath)).mtimeMs;
+      expect(journal?.lastModified).toBe(expectedMtime);
+      expect(journal?.lastModified).not.toBe(dirMtime);
+    } finally {
+      await fix.rm();
+    }
+  });
+
+  it('falls back to dir mtime when /var/log/journal has no .journal files', async () => {
+    const fix = await createFixture({ 'var/log/journal/.placeholder': '' });
+    try {
+      const items = await new SystemDetector({ rootDir: fix.path, platform: 'linux' }).scanGlobal(
+        ctx,
+      );
+      const journal = items.find((i) => i.metadata?.kind === 'journal-logs');
+      expect(journal).toBeDefined();
+      expect(typeof journal?.lastModified).toBe('number');
+      expect(journal?.lastModified).toBeGreaterThan(0);
+    } finally {
+      await fix.rm();
+    }
+  });
 });
 
 // ─── APT package cache ────────────────────────────────────────────────────────

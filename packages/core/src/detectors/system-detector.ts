@@ -15,6 +15,10 @@ const defaultRunner: CommandRunner = async (cmd, args) => {
   return { stdout: result.stdout, exitCode: result.exitCode ?? 1 };
 };
 
+function isJournalFile(name: string): boolean {
+  return name.endsWith('.journal') || name.endsWith('.journal~');
+}
+
 export interface SystemDetectorOptions {
   /** Override filesystem root for testability (default: '/') */
   readonly rootDir?: string;
@@ -71,12 +75,55 @@ export class SystemDetector extends BaseDetector {
         detector: this.id,
         risk: RiskTier.Yellow,
         sizeBytes: await this.computeSize(path),
-        lastModified: await this.getLastModified(path),
+        lastModified: await this.findNewestJournalMtime(path),
         description:
           'systemd journal logs — trim with `journalctl --vacuum-time=30d` or `journalctl --vacuum-size=500M`',
         metadata: { kind: 'journal-logs' },
       },
     ];
+  }
+
+  // Bug #4 (dogfood beta.3 → beta.6): journald appends to existing
+  // .journal files without touching the parent directory mtime, so using
+  // the dir mtime makes scans report stale "last modified" dates while the
+  // journal is still live. Walk the per-machine subdirs and take the
+  // newest .journal[~] mtime instead. Falls back to dir mtime if no
+  // journal files are found or the dir is unreadable.
+  private async findNewestJournalMtime(dir: string): Promise<number> {
+    let newest = 0;
+    try {
+      const entries = await readdir(dir, { withFileTypes: true, encoding: 'utf-8' });
+      for (const entry of entries) {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          try {
+            const sub = await readdir(fullPath, { withFileTypes: true, encoding: 'utf-8' });
+            for (const subEntry of sub) {
+              if (!subEntry.isFile()) continue;
+              if (!isJournalFile(subEntry.name)) continue;
+              try {
+                const s = await stat(join(fullPath, subEntry.name));
+                if (s.mtimeMs > newest) newest = s.mtimeMs;
+              } catch {
+                /* skip unreadable */
+              }
+            }
+          } catch {
+            /* skip unreadable subdir */
+          }
+        } else if (entry.isFile() && isJournalFile(entry.name)) {
+          try {
+            const s = await stat(fullPath);
+            if (s.mtimeMs > newest) newest = s.mtimeMs;
+          } catch {
+            /* skip */
+          }
+        }
+      }
+    } catch {
+      return this.getLastModified(dir);
+    }
+    return newest > 0 ? newest : this.getLastModified(dir);
   }
 
   private async checkAptCache(): Promise<CleanableItem[]> {
