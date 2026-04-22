@@ -10,6 +10,7 @@
 import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { cleanCommand } from './commands/clean.js';
+import { completionsCommand } from './commands/completions.js';
 import { configCommand } from './commands/config.js';
 import { doctorCommand } from './commands/doctor.js';
 import { scanCommand } from './commands/scan.js';
@@ -62,12 +63,19 @@ program
   .argument('[value]', 'Configuration value (for set)')
   .action(configCommand);
 
+program
+  .command('completions')
+  .description('Print shell completion script')
+  .argument('<shell>', 'bash | zsh | fish')
+  .action(completionsCommand);
+
 program.hook('preAction', (_thisCommand, actionCommand) => {
   const opts = program.opts<{ verbose?: boolean }>();
   setVerbose(opts.verbose ?? false);
-  // Skip logo for --json mode
+  // Skip logo for --json mode and for `completions` (output gets piped to a file).
   const cmdOpts = actionCommand.opts<{ json?: boolean }>();
-  if (!cmdOpts.json) printLogo(version);
+  const isCompletions = actionCommand.name() === 'completions';
+  if (!cmdOpts.json && !isCompletions) printLogo(version);
 });
 
 program.parseAsync(process.argv).catch((err: unknown) => {
