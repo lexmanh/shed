@@ -34,6 +34,7 @@ program
   .description('Scan for cleanable items without modifying anything')
   .option('--json', 'Output machine-readable JSON')
   .option('--max-age <days>', 'Only include items older than N days', '30')
+  .option('--all', 'Show every item (default: compact summary with top 15)')
   .action(scanCommand);
 
 program
