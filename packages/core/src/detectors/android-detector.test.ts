@@ -112,29 +112,13 @@ describe('AndroidDetector.analyze', () => {
 });
 
 describe('AndroidDetector.scanGlobal', () => {
-  it('returns Green items for ~/.gradle/caches', async () => {
-    const home = await createFixture({ '.gradle/caches/modules-2/files/lib.jar': 'data' });
-    try {
-      const detector = new AndroidDetector({ homeDir: home.path });
-      const items = await detector.scanGlobal(ctx);
-      expect(items.length).toBeGreaterThan(0);
-      for (const item of items) {
-        expect(item.risk).toBe(RiskTier.Green);
-        expect(item.detector).toBe('android');
-      }
-    } finally {
-      await home.rm();
-    }
-  });
-
-  it('returns empty array when no global caches exist', async () => {
-    const home = await createFixture({});
-    try {
-      const detector = new AndroidDetector({ homeDir: home.path });
-      const items = await detector.scanGlobal(ctx);
-      expect(items).toHaveLength(0);
-    } finally {
-      await home.rm();
-    }
+  // Bug #1 (dogfood 2026-04-22 manhlx-vpt-01): Android and java-gradle
+  // both claimed ~/.gradle/caches, double-counting 12.65 GB in the report.
+  // JavaGradleDetector owns ~/.gradle/caches; Android scanGlobal returns [].
+  // Bug #1 (dogfood 2026-04-22 manhlx-vpt-01): scanGlobal previously claimed
+  // ~/.gradle/caches, double-counting with JavaGradleDetector. Now always [].
+  it('returns empty — global Gradle caches are owned by JavaGradleDetector', async () => {
+    const items = await new AndroidDetector().scanGlobal(ctx);
+    expect(items).toHaveLength(0);
   });
 });
