@@ -132,6 +132,25 @@ describe('aggregateForDisplay', () => {
     expect(groups[0]?.description).toMatch(/14/);
     expect(groups[0]?.description).toMatch(/rotated-log/);
   });
+
+  // Bug #8 (dogfood beta.5): Docker items use volume names / container IDs as
+  // path (not filesystem paths), so dirname() returns ".". Showing "." in the
+  // aggregate row is confusing — fall back to the kind for a meaningful label.
+  it('uses kind as displayPath when items have no meaningful parent dir', () => {
+    const items = Array.from({ length: 5 }, (_, i) =>
+      mkItem({
+        id: `vol-${i}`,
+        path: `myapp_data_${i}`, // bare volume name → dirname is "."
+        detector: 'docker',
+        metadata: { kind: 'orphan-volume' },
+      }),
+    );
+    const groups = aggregateForDisplay(items);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.type).toBe('aggregate');
+    expect(groups[0]?.displayPath).not.toBe('.');
+    expect(groups[0]?.displayPath).toBe('orphan-volume');
+  });
 });
 
 // ─── selectTopGroups ─────────────────────────────────────────────────────────

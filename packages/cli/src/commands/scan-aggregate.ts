@@ -64,10 +64,15 @@ export function aggregateForDisplay(items: readonly CleanableItem[]): DisplayGro
       if (!first) continue;
       const totalBytes = arr.reduce((s, i) => s + i.sizeBytes, 0);
       const kind = first.metadata?.kind as string;
+      // Bug #8 (dogfood beta.5): Docker items use volume names / container IDs
+      // as path (not filesystem paths), so dirname() returns ".". Fall back to
+      // the kind for a meaningful label instead of showing a literal ".".
+      const parentDir = dirname(first.path);
+      const displayPath = parentDir === '.' ? kind : parentDir;
       result.push({
         type: 'aggregate',
         risk: first.risk,
-        displayPath: dirname(first.path),
+        displayPath,
         description: `${arr.length} ${kind} files`,
         totalBytes,
         detector: first.detector,
