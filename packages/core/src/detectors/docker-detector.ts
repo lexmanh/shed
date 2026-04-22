@@ -50,8 +50,12 @@ interface DockerVolumeDetail {
   CreatedAt: string;
 }
 
-function parseDockerSize(sizeStr: string): number {
-  const match = /^([\d.]+)\s*(B|kB|KB|MB|GB|TB)?$/i.exec(sizeStr.trim());
+function parseDockerSize(sizeStr: string | undefined): number {
+  if (!sizeStr) return 0;
+  // Anchorless: handles "50MB", "50MB (virtual 200MB)", "1.234GB", "0B".
+  // First numeric+unit token wins — e.g. for `docker container ls --size`,
+  // the leading value is the writable layer (the part actually freed on prune).
+  const match = /([\d.]+)\s*(B|kB|KB|MB|GB|TB)/i.exec(sizeStr);
   if (!match) return 0;
   const value = Number.parseFloat(match[1] ?? '0');
   const unit = (match[2] ?? 'B').toUpperCase();
@@ -116,9 +120,20 @@ export class DockerDetector extends BaseDetector {
 
   private async listStoppedContainers(): Promise<CleanableItem[]> {
     try {
+      // --size populates Container.Size (writable layer + virtual). Without it,
+      // docker omits Size entirely and parseDockerSize returns 0.
       const { stdout } = await execa(
         'docker',
-        ['container', 'ls', '--all', '--format', '{{json .}}', '--filter', 'status=exited'],
+        [
+          'container',
+          'ls',
+          '--all',
+          '--size',
+          '--format',
+          '{{json .}}',
+          '--filter',
+          'status=exited',
+        ],
         { reject: false, timeout: 10000 },
       );
       if (!stdout.trim()) return [];
@@ -184,6 +199,11 @@ export class DockerDetector extends BaseDetector {
         timeout: 10000,
       });
       const details = JSON.parse(inspectOut) as DockerVolumeDetail[];
+
+      // Bug #2 (dogfood 2026-04-22): `docker volume inspect` does not include
+      // size, and using `du` on the mountpoint requires root. `docker system df -v`
+      // surfaces per-volume sizes from Docker's own metadata, no sudo needed.
+      const sizeByName = await this.fetchVolumeSizes();
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
 
       // path uses volume name (not mountpoint) — consistent with other Docker items
@@ -196,13 +216,31 @@ export class DockerDetector extends BaseDetector {
           path: d.Name,
           detector: this.id,
           risk: RiskTier.Yellow,
-          sizeBytes: 0,
+          sizeBytes: sizeByName.get(d.Name) ?? 0,
           lastModified: new Date(d.CreatedAt).getTime(),
           description: `Orphan Docker volume "${d.Name}" (not attached to any container) — remove with \`docker volume rm ${d.Name}\``,
           metadata: { kind: 'orphan-volume', volumeName: d.Name },
         }));
     } catch {
       return [];
+    }
+  }
+
+  private async fetchVolumeSizes(): Promise<Map<string, number>> {
+    try {
+      const { stdout } = await execa('docker', ['system', 'df', '-v', '--format', '{{json .}}'], {
+        reject: false,
+        timeout: 10000,
+      });
+      if (!stdout.trim()) return new Map();
+      const parsed = JSON.parse(stdout) as { Volumes?: Array<{ Name: string; Size: string }> };
+      const map = new Map<string, number>();
+      for (const v of parsed.Volumes ?? []) {
+        map.set(v.Name, parseDockerSize(v.Size));
+      }
+      return map;
+    } catch {
+      return new Map();
     }
   }
 

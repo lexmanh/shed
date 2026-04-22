@@ -103,11 +103,17 @@ describe('DockerDetector.scanGlobal — dangling images', () => {
 // ─── scanGlobal — stopped containers ─────────────────────────────────────────
 
 describe('DockerDetector.scanGlobal — stopped containers', () => {
-  it('returns a Green item for each stopped container', async () => {
+  it('returns a Green item for each stopped container with non-zero size', async () => {
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // images
+    // `docker container ls --size` returns Size in "1.2MB (virtual 50MB)" format
     mockExeca.mockResolvedValueOnce({
       stdout: JSON.stringify([
-        { ID: 'c1abc', Names: 'my_app', Size: '50MB', Status: 'Exited (0) 3 days ago' },
+        {
+          ID: 'c1abc',
+          Names: 'my_app',
+          Size: '50MB (virtual 200MB)',
+          Status: 'Exited (0) 3 days ago',
+        },
       ]),
       exitCode: 0,
     } as never);
@@ -118,6 +124,22 @@ describe('DockerDetector.scanGlobal — stopped containers', () => {
     const containerItems = items.filter((i) => i.metadata?.kind === 'stopped-container');
     expect(containerItems).toHaveLength(1);
     expect(containerItems[0]?.risk).toBe(RiskTier.Green);
+    // Bug #2 (dogfood 2026-04-22): previously sizeBytes was 0 because
+    // docker container ls without --size omits the Size field entirely.
+    expect(containerItems[0]?.sizeBytes).toBe(50_000_000);
+  });
+
+  it('passes --size flag so Size field is populated', async () => {
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '', exitCode: 0 } as never);
+
+    await new DockerDetector().scanGlobal(ctx);
+    const containerCall = mockExeca.mock.calls.find(
+      (call) => call[0] === 'docker' && (call[1] as string[])?.includes('container'),
+    );
+    expect(containerCall?.[1]).toContain('--size');
   });
 });
 
@@ -162,7 +184,7 @@ describe('DockerDetector.scanGlobal — orphan volumes', () => {
   const OLD_DATE = new Date(Date.now() - 31 * 24 * 60 * 60 * 1000).toISOString();
   const NEW_DATE = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString();
 
-  it('returns a Yellow item for orphan volumes older than 30 days', async () => {
+  it('returns a Yellow item with non-zero size for orphan volumes older than 30 days', async () => {
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // images
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // containers
     mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never); // build cache
@@ -182,6 +204,13 @@ describe('DockerDetector.scanGlobal — orphan volumes', () => {
       ]),
       exitCode: 0,
     } as never);
+    // system df -v — used to look up volume sizes
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify({
+        Volumes: [{ Name: 'myapp_data', Links: 0, Size: '500MB' }],
+      }),
+      exitCode: 0,
+    } as never);
 
     const items = await new DockerDetector().scanGlobal(ctx);
     const vol = items.find((i) => i.metadata?.kind === 'orphan-volume');
@@ -190,6 +219,36 @@ describe('DockerDetector.scanGlobal — orphan volumes', () => {
     expect(vol?.metadata?.volumeName).toBe('myapp_data');
     // path must be volume name, NOT mountpoint — prevents direct filesystem deletion
     expect(vol?.path).toBe('myapp_data');
+    // Bug #2 (dogfood 2026-04-22): previously sizeBytes was hardcoded to 0
+    // for all orphan volumes, masking real disk usage in scan reports.
+    expect(vol?.sizeBytes).toBe(500_000_000);
+  });
+
+  it('falls back to sizeBytes 0 if `docker system df` is unavailable', async () => {
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({ stdout: '[]', exitCode: 0 } as never);
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify([{ Name: 'unknown_vol', Driver: 'local', Scope: 'local' }]),
+      exitCode: 0,
+    } as never);
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify([
+        {
+          Name: 'unknown_vol',
+          Mountpoint: '/var/lib/docker/volumes/unknown_vol/_data',
+          CreatedAt: OLD_DATE,
+        },
+      ]),
+      exitCode: 0,
+    } as never);
+    // system df fails (e.g. older Docker version) — should not blow up
+    mockExeca.mockRejectedValueOnce(new Error('unknown command'));
+
+    const items = await new DockerDetector().scanGlobal(ctx);
+    const vol = items.find((i) => i.metadata?.kind === 'orphan-volume');
+    expect(vol).toBeDefined();
+    expect(vol?.sizeBytes).toBe(0);
   });
 
   it('skips orphan volumes newer than 30 days', async () => {
@@ -208,6 +267,12 @@ describe('DockerDetector.scanGlobal — orphan volumes', () => {
           CreatedAt: NEW_DATE,
         },
       ]),
+      exitCode: 0,
+    } as never);
+    // system df — fresh_vol gets filtered before we'd use it, but listOrphanVolumes
+    // calls df after inspect so the mock is still consumed
+    mockExeca.mockResolvedValueOnce({
+      stdout: JSON.stringify({ Volumes: [{ Name: 'fresh_vol', Links: 0, Size: '0B' }] }),
       exitCode: 0,
     } as never);
 
