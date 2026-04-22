@@ -3,27 +3,11 @@ import { hostname } from 'node:os';
 import { resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import {
-  AndroidDetector,
   type CleanableItem,
-  CocoaPodsDetector,
-  DatabaseDetector,
   type DetectedProject,
-  DockerDetector,
-  DotnetDetector,
-  FlutterDetector,
-  GoDetector,
-  IdeDetector,
-  JavaGradleDetector,
-  JavaMavenDetector,
-  NodeDetector,
-  PythonDetector,
   RiskTier,
-  RubyDetector,
-  RustDetector,
   Scanner,
-  SystemDetector,
-  WebserverDetector,
-  XcodeDetector,
+  defaultDetectors,
 } from '@lexmanh/shed-core';
 import pc from 'picocolors';
 import { verbose } from '../verbose.js';
@@ -75,25 +59,7 @@ export async function scanCommand(path = '.', options: ScanOptions = {}): Promis
 
   const scanStartedAt = Date.now();
 
-  const scanner = new Scanner([
-    new NodeDetector(),
-    new PythonDetector(),
-    new RustDetector(),
-    new GoDetector(),
-    new JavaMavenDetector(),
-    new JavaGradleDetector(),
-    new RubyDetector(),
-    new DotnetDetector(),
-    new DockerDetector(),
-    new XcodeDetector(),
-    new FlutterDetector(),
-    new AndroidDetector(),
-    new CocoaPodsDetector(),
-    new IdeDetector(),
-    new SystemDetector(),
-    new WebserverDetector(),
-    new DatabaseDetector(),
-  ]);
+  const scanner = new Scanner(defaultDetectors());
 
   const ctx = { scanRoot: rootDir, maxDepth: 8 };
 

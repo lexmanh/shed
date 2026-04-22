@@ -1,21 +1,13 @@
 import { resolve } from 'node:path';
 import * as p from '@clack/prompts';
 import {
-  AndroidDetector,
   type CleanableItem,
-  CocoaPodsDetector,
   type DetectedProject,
-  DockerDetector,
-  FlutterDetector,
-  IdeDetector,
-  NodeDetector,
-  PythonDetector,
   RiskTier,
-  RustDetector,
   SafetyChecker,
   type SafetyReason,
   Scanner,
-  XcodeDetector,
+  defaultDetectors,
 } from '@lexmanh/shed-core';
 import pc from 'picocolors';
 import { verbose } from '../verbose.js';
@@ -60,17 +52,7 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
   verbose(`clean root: ${rootDir}, dryRun=${isDryRun}, hardDelete=${options.hardDelete ?? false}`);
   spinner.start(`Scanning ${rootDir} …`);
 
-  const scanner = new Scanner([
-    new NodeDetector(),
-    new PythonDetector(),
-    new RustDetector(),
-    new DockerDetector(),
-    new XcodeDetector(),
-    new FlutterDetector(),
-    new AndroidDetector(),
-    new CocoaPodsDetector(),
-    new IdeDetector(),
-  ]);
+  const scanner = new Scanner(defaultDetectors());
 
   const ctx = { scanRoot: rootDir, maxDepth: 8 };
   const [projects, globalItems] = await Promise.all([
@@ -161,10 +143,11 @@ export async function cleanCommand(path = '.', options: CleanOptions = {}): Prom
             ]
           : []),
         { value: 'custom', label: 'Custom  (pick individual items)' },
+        { value: 'cancel', label: pc.dim('Cancel  (do nothing, exit)') },
       ],
     });
 
-    if (p.isCancel(preset)) {
+    if (p.isCancel(preset) || preset === 'cancel') {
       p.cancel('Cleanup cancelled.');
       return;
     }

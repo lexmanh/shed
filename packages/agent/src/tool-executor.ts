@@ -3,34 +3,12 @@
  * All operations are READ-ONLY. AI cannot trigger cleanup.
  */
 
-import {
-  AndroidDetector,
-  CocoaPodsDetector,
-  DockerDetector,
-  FlutterDetector,
-  IdeDetector,
-  NodeDetector,
-  PythonDetector,
-  RustDetector,
-  SafetyChecker,
-  Scanner,
-  XcodeDetector,
-} from '@lexmanh/shed-core';
+import { SafetyChecker, Scanner, defaultDetectors } from '@lexmanh/shed-core';
 import type { CleanableItem } from '@lexmanh/shed-core';
 import { execa } from 'execa';
 
 function makeScanner(): Scanner {
-  return new Scanner([
-    new NodeDetector(),
-    new PythonDetector(),
-    new RustDetector(),
-    new DockerDetector(),
-    new XcodeDetector(),
-    new FlutterDetector(),
-    new AndroidDetector(),
-    new CocoaPodsDetector(),
-    new IdeDetector(),
-  ]);
+  return new Scanner(defaultDetectors());
 }
 
 export type ToolResult = Record<string, unknown>;
