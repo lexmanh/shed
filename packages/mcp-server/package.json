@@ -1,6 +1,6 @@
 {
   "name": "@lexmanh/shed-mcp-server",
-  "version": "0.2.0-beta.7",
+  "version": "0.2.0-beta.8",
   "description": "MCP server for Shed — exposes disk scan and analysis tools to Claude Desktop and Claude Code",
   "type": "module",
   "bin": {
